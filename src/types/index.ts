@@ -54,6 +54,7 @@ export interface Invitation {
   status: InvitationStatus;
   created_at: string;
   completed_at: string | null;
+  result_token?: string | null;
 }
 
 export interface ResultAnswer {

@@ -5,7 +5,7 @@ export const themes: Record<ThemeId, Theme> = {
     id: 'sakura',
     name: 'Sakura',
     emoji: '🌸',
-    description: 'Soft pink petals, gentle romance',
+    description: 'Нежные розовые лепестки, мягкая романтика',
     colors: {
       primary: '#e8608a',
       primaryLight: '#f4a0be',
@@ -27,7 +27,7 @@ export const themes: Record<ThemeId, Theme> = {
     id: 'sunset',
     name: 'Sunset',
     emoji: '🌅',
-    description: 'Warm golden hour, passionate energy',
+    description: 'Теплый закатный час, страстная энергия',
     colors: {
       primary: '#ff7043',
       primaryLight: '#ff9a76',
@@ -49,7 +49,7 @@ export const themes: Record<ThemeId, Theme> = {
     id: 'beach',
     name: 'Beach',
     emoji: '🌊',
-    description: 'Ocean breeze, carefree joy',
+    description: 'Морской бриз, беззаботная радость',
     colors: {
       primary: '#00b4d8',
       primaryLight: '#48cae4',
@@ -71,7 +71,7 @@ export const themes: Record<ThemeId, Theme> = {
     id: 'galaxy',
     name: 'Galaxy',
     emoji: '🌌',
-    description: 'Deep cosmos, infinite mystery',
+    description: 'Глубокий космос, бесконечная тайна',
     colors: {
       primary: '#a78bfa',
       primaryLight: '#c4b5fd',
@@ -93,7 +93,7 @@ export const themes: Record<ThemeId, Theme> = {
     id: 'coffee',
     name: 'Coffee',
     emoji: '☕',
-    description: 'Cozy warmth, intimate moments',
+    description: 'Уютное тепло, интимные моменты',
     colors: {
       primary: '#c8956c',
       primaryLight: '#ddb896',
@@ -115,7 +115,7 @@ export const themes: Record<ThemeId, Theme> = {
     id: 'minimal',
     name: 'Minimal',
     emoji: '✨',
-    description: 'Clean elegance, timeless beauty',
+    description: 'Чистая элегантность, неподвластная времени красота',
     colors: {
       primary: '#e8e8e8',
       primaryLight: '#f5f5f5',

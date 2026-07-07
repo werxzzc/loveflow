@@ -23,7 +23,7 @@ export default function AdminLoginPage() {
     if (res.ok) {
       router.push('/admin/dashboard');
     } else {
-      setError('Wrong password. Try again.');
+      setError('Неверный пароль. Попробуйте еще раз.');
       setLoading(false);
     }
   }
@@ -70,7 +70,7 @@ export default function AdminLoginPage() {
             LoveFlow
           </h1>
           <p className="text-sm" style={{ color: '#888899' }}>
-            Admin access only
+            Панель управления
           </p>
         </div>
 
@@ -87,13 +87,13 @@ export default function AdminLoginPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-xs font-medium mb-2" style={{ color: '#888899', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                Password
+                Пароль
               </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter admin password"
+                placeholder="Введите пароль администратора"
                 autoFocus
                 required
                 className="w-full px-4 py-3 rounded-xl text-sm transition-all duration-200"
@@ -137,17 +137,17 @@ export default function AdminLoginPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  Signing in...
+                  Вход...
                 </span>
               ) : (
-                'Sign In'
+                'Войти'
               )}
             </button>
           </form>
         </div>
 
         <p className="text-center text-xs mt-6" style={{ color: 'rgba(255,255,255,0.2)' }}>
-          LoveFlow Admin · Restricted Access
+          LoveFlow Admin · Ограниченный доступ
         </p>
       </div>
     </div>

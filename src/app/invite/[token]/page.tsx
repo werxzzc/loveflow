@@ -29,12 +29,12 @@ export default function InvitePage({
       try {
         const res = await fetch(`/api/invite/${token}`);
         if (!res.ok) {
-          throw new Error('Invitation not found or inactive');
+          throw new Error('Приглашение не найдено или неактивно');
         }
         const data = await res.json();
         setInvitation(data);
       } catch (err: any) {
-        setError(err.message || 'Something went wrong');
+        setError(err.message || 'Что-то пошло не так');
       } finally {
         setLoading(false);
       }
@@ -48,28 +48,23 @@ export default function InvitePage({
   };
 
   const handleRunawayMove = () => {
-    // Generate a random translation vector
     const minMove = 100;
     const maxMove = 220;
     
-    // Choose a random angle
     const angle = Math.random() * Math.PI * 2;
     const distance = minMove + Math.random() * (maxMove - minMove);
     
     let newX = Math.cos(angle) * distance;
     let newY = Math.sin(angle) * distance;
 
-    // Boundary constraints to keep it reasonably within screen/viewport limits
     if (runawayButtonRef.current) {
       const rect = runawayButtonRef.current.getBoundingClientRect();
       const vw = typeof window !== 'undefined' ? window.innerWidth : 400;
       const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
       
-      // Calculate projected absolute position
       const absoluteX = rect.left + runawayOffset.x + newX;
       const absoluteY = rect.top + runawayOffset.y + newY;
       
-      // Bounce off walls if it goes outside 10% margins of the viewport
       const margin = 80;
       if (absoluteX < margin || absoluteX > vw - margin - rect.width) {
         newX = -newX;
@@ -91,7 +86,6 @@ export default function InvitePage({
       return;
     }
 
-    // Reset runaway offsets for the next question
     setRunawayOffset({ x: 0, y: 0 });
 
     const newAnswer: ResultAnswer = {
@@ -108,7 +102,6 @@ export default function InvitePage({
     if (currentQIndex < (invitation?.questions?.length || 0) - 1) {
       setCurrentQIndex(currentQIndex + 1);
     } else {
-      // Completed, submit
       const timeTaken = Math.round((Date.now() - startTime) / 1000);
       try {
         const submitRes = await fetch(`/api/invite/${token}`, {
@@ -126,10 +119,10 @@ export default function InvitePage({
           setResultToken(resultData.result_token);
           setStep('completed');
         } else {
-          throw new Error(resultData.error || 'Failed to submit answers');
+          throw new Error(resultData.error || 'Не удалось сохранить ответы');
         }
       } catch (err: any) {
-        alert(err.message || 'Submission failed, please try again.');
+        alert(err.message || 'Ошибка отправки, попробуйте еще раз.');
       }
     }
   };
@@ -148,7 +141,7 @@ export default function InvitePage({
       <div className="min-h-screen flex items-center justify-center bg-[#080810] text-white">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500 mx-auto"></div>
-          <p className="text-sm text-gray-400">Opening magical invitation...</p>
+          <p className="text-sm text-gray-400">Открываем волшебное приглашение...</p>
         </div>
       </div>
     );
@@ -159,9 +152,9 @@ export default function InvitePage({
       <div className="min-h-screen flex items-center justify-center bg-[#080810] text-white p-4">
         <div className="glass max-w-sm w-full p-8 rounded-2xl text-center space-y-4 border-red-500/20">
           <div className="text-4xl">🔒</div>
-          <h2 className="text-lg font-bold text-red-400">Invitation Unavailable</h2>
+          <h2 className="text-lg font-bold text-red-400">Приглашение недоступно</h2>
           <p className="text-sm text-gray-400">
-            This invitation has already been completed, deleted, or the link is incorrect.
+            Это приглашение уже было пройдено, удалено или ссылка неверна.
           </p>
         </div>
       </div>
@@ -182,7 +175,7 @@ export default function InvitePage({
         fontFamily: theme.fontStyle === 'romantic' ? 'var(--font-playfair)' : 'var(--font-sans)',
       }}
     >
-      {/* Decorative Floating Elements / Particle Background simulator */}
+      {/* Decorative Floating Elements */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
         {theme.particleType === 'petals' && (
           <>
@@ -235,7 +228,7 @@ export default function InvitePage({
                style={{ borderColor: theme.colors.border, backgroundColor: theme.colors.surface }}>
             <div className="text-6xl animate-float">{theme.emoji}</div>
             <h2 className="text-3xl font-extrabold text-white" style={{ fontFamily: 'var(--font-playfair)' }}>
-              Hey {invitation.girl_name}!
+              Привет, {invitation.girl_name}!
             </h2>
             {invitation.welcome_message && (
               <p className="text-base text-gray-200 leading-relaxed font-light">
@@ -256,7 +249,7 @@ export default function InvitePage({
                 boxShadow: `0 8px 24px ${theme.colors.primary}50`,
               }}
             >
-              Open Invitation ✨
+              Открыть приглашение ✨
             </button>
           </div>
         )}
@@ -296,7 +289,7 @@ export default function InvitePage({
                         color: '#f87171',
                       }}
                     >
-                      {ans.emoji} {ans.text || 'No'}
+                      {ans.emoji} {ans.text || 'Нет'}
                     </button>
                   );
                 }
@@ -334,13 +327,13 @@ export default function InvitePage({
                style={{ borderColor: theme.colors.border, backgroundColor: theme.colors.surface }}>
             <div className="text-6xl animate-float">❤️</div>
             <h2 className="text-3xl font-extrabold text-white" style={{ fontFamily: 'var(--font-playfair)' }}>
-              Thank You!
+              Спасибо!
             </h2>
             <p className="text-base text-gray-200 leading-relaxed font-light">
-              {invitation.final_message || 'Your answers have been saved.'}
+              {invitation.final_message || 'Твои ответы успешно сохранены.'}
             </p>
             <p className="text-sm text-gray-400 font-light">
-              Send the results link to your boyfriend so he can see your answers.
+              Отправь эту ссылку своему парню, чтобы он мог посмотреть твои ответы.
             </p>
             
             <div className="space-y-3 pt-4">
@@ -353,7 +346,7 @@ export default function InvitePage({
                   boxShadow: `0 8px 24px ${theme.colors.primary}50`,
                 }}
               >
-                <span>{copied ? '✓ Link Copied!' : '🔗 Copy Results Link'}</span>
+                <span>{copied ? '✓ Ссылка скопирована!' : '🔗 Скопировать ссылку на ответы'}</span>
               </button>
             </div>
           </div>
@@ -362,7 +355,7 @@ export default function InvitePage({
 
       {/* Footer disclaimer */}
       <div className="text-center pb-4 text-xs opacity-40 z-10">
-        LoveFlow premium invitation.
+        Премиум-приглашение LoveFlow.
       </div>
     </div>
   );

@@ -34,6 +34,12 @@ function InvitationCard({
     completed: { bg: 'rgba(16,185,129,0.12)', text: '#34d399', border: 'rgba(16,185,129,0.2)' },
   }[invitation.status];
 
+  const statusText = {
+    draft: 'Черновик',
+    pending: 'Ожидает ответа',
+    completed: 'Завершено',
+  }[invitation.status];
+
   return (
     <div className="rounded-2xl p-5 transition-all duration-200 hover:-translate-y-0.5 group"
       style={{
@@ -50,12 +56,12 @@ function InvitationCard({
           <span className="text-xl">{theme.emoji}</span>
           <div>
             <h3 className="font-semibold text-white text-sm">{invitation.girl_name}</h3>
-            <p className="text-xs" style={{ color: '#888899' }}>{theme.name} theme</p>
+            <p className="text-xs" style={{ color: '#888899' }}>Тема: {theme.name}</p>
           </div>
         </div>
-        <span className="text-xs px-2.5 py-1 rounded-full font-medium"
+        <span className="text-xs px-2.5 py-1 rounded-full font-medium animate-fade-in"
           style={{ background: statusColor.bg, color: statusColor.text, border: `1px solid ${statusColor.border}` }}>
-          {invitation.status}
+          {statusText}
         </span>
       </div>
 
@@ -69,29 +75,41 @@ function InvitationCard({
       {/* Dates */}
       <div className="grid grid-cols-2 gap-2 mb-4">
         <div className="rounded-lg p-2" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
-          <p className="text-xs" style={{ color: '#888899' }}>Created</p>
+          <p className="text-xs" style={{ color: '#888899' }}>Создано</p>
           <p className="text-xs font-medium text-white">{formatDate(invitation.created_at)}</p>
         </div>
         <div className="rounded-lg p-2" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
-          <p className="text-xs" style={{ color: '#888899' }}>Questions</p>
+          <p className="text-xs" style={{ color: '#888899' }}>Вопросов</p>
           <p className="text-xs font-medium text-white">{invitation.questions?.length ?? 0}</p>
         </div>
       </div>
 
       {/* Actions */}
       <div className="space-y-2">
+        {invitation.status === 'completed' && invitation.result_token && (
+          <button
+            onClick={() => router.push(`/results/${invitation.result_token}`)}
+            className="w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.01]"
+            style={{
+              background: `linear-gradient(135deg, ${theme.colors.primary}, ${theme.colors.accent})`,
+              color: '#ffffff',
+            }}
+          >
+            💬 Просмотреть ответы
+          </button>
+        )}
         <div className="flex gap-2">
           <button
             onClick={() => router.push(`/editor/${invitation.id}?client=${clientToken}`)}
             className="flex-1 py-2 rounded-xl text-xs font-semibold transition-all"
             style={{ background: `${theme.colors.primary}22`, color: theme.colors.primary, border: `1px solid ${theme.colors.primary}44` }}>
-            Open Editor
+            Редактор
           </button>
           <button
             onClick={copyInviteLink}
             className="flex-1 py-2 rounded-xl text-xs font-medium transition-all hover:bg-white/10"
             style={{ background: 'rgba(255,255,255,0.05)', color: copied === 'invite' ? '#34d399' : '#f0f0f4', border: '1px solid rgba(255,255,255,0.08)' }}>
-            {copied === 'invite' ? '✓ Copied!' : 'Copy Link'}
+            {copied === 'invite' ? '✓ Ссылка скопирована' : 'Ссылка'}
           </button>
         </div>
         <div className="flex gap-2">
@@ -99,13 +117,13 @@ function InvitationCard({
             onClick={onDuplicate}
             className="flex-1 py-1.5 rounded-xl text-xs font-medium transition-all hover:bg-white/10"
             style={{ background: 'rgba(255,255,255,0.03)', color: '#888899', border: '1px solid rgba(255,255,255,0.06)' }}>
-            Duplicate
+            Дублировать
           </button>
           <button
             onClick={onDelete}
             className="flex-1 py-1.5 rounded-xl text-xs font-medium transition-all hover:bg-red-500/20"
             style={{ background: 'rgba(239,68,68,0.06)', color: '#f87171', border: '1px solid rgba(239,68,68,0.15)' }}>
-            Delete
+            Удалить
           </button>
         </div>
       </div>
@@ -145,8 +163,8 @@ export default function ClientPage({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        girl_name: 'My Love',
-        title: 'Will You Go Out With Me?',
+        girl_name: 'Моя любовь',
+        title: 'Пойдешь со мной на свидание?',
         theme: 'sakura',
         questions: [],
       }),
@@ -156,7 +174,7 @@ export default function ClientPage({
     if (res.ok) {
       router.push(`/editor/${inv.id}?client=${token}`);
     } else {
-      alert(inv.error || 'Failed to create invitation');
+      alert(inv.error || 'Не удалось создать приглашение');
     }
   }
 
@@ -173,7 +191,7 @@ export default function ClientPage({
   async function handleDuplicate(invitation: Invitation) {
     if (!client) return;
     const remaining = creditsRemaining(client.credits_total, client.credits_used);
-    if (remaining <= 0) { alert('No credits remaining.'); return; }
+    if (remaining <= 0) { alert('У вас не осталось кредитов для создания приглашений.'); return; }
 
     const res = await fetch(`/api/clients/${token}/invitations`, {
       method: 'POST',
@@ -199,7 +217,7 @@ export default function ClientPage({
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#080810' }}>
         <div className="text-center">
           <div className="text-4xl mb-4 animate-pulse">💌</div>
-          <p className="text-sm" style={{ color: '#888899' }}>Loading your workspace...</p>
+          <p className="text-sm" style={{ color: '#888899' }}>Загрузка рабочего пространства...</p>
         </div>
       </div>
     );
@@ -210,8 +228,8 @@ export default function ClientPage({
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#080810' }}>
         <div className="text-center">
           <div className="text-5xl mb-4">🔒</div>
-          <h1 className="text-xl font-bold text-white mb-2">Access Denied</h1>
-          <p className="text-sm" style={{ color: '#888899' }}>This link is invalid or expired.</p>
+          <h1 className="text-xl font-bold text-white mb-2">Доступ ограничен</h1>
+          <p className="text-sm" style={{ color: '#888899' }}>Эта ссылка недействительна или устарела.</p>
         </div>
       </div>
     );
@@ -248,13 +266,13 @@ export default function ClientPage({
           }}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <p className="text-sm mb-1" style={{ color: '#888899' }}>Welcome back,</p>
+              <p className="text-sm mb-1" style={{ color: '#888899' }}>Добро пожаловать,</p>
               <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-playfair)' }}>
                 {client.name} 👋
               </h1>
             </div>
             <div className="text-right">
-              <p className="text-xs mb-1" style={{ color: '#888899' }}>Invitation Credits</p>
+              <p className="text-xs mb-1" style={{ color: '#888899' }}>Осталось приглашений</p>
               <p className="text-3xl font-bold" style={{
                 background: remaining === 0 ? 'none' : 'linear-gradient(135deg, #ec4899, #a78bfa)',
                 WebkitBackgroundClip: remaining === 0 ? 'none' : 'text',
@@ -295,12 +313,12 @@ export default function ClientPage({
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  Creating...
+                  Создание...
                 </>
               ) : remaining === 0 ? (
-                '🔒 No Credits Remaining'
+                '🔒 Лимит приглашений исчерпан'
               ) : (
-                <>✨ Create New Invitation</>
+                <>✨ Создать приглашение</>
               )}
             </span>
           </button>
@@ -309,15 +327,15 @@ export default function ClientPage({
         {/* Invitations */}
         <div>
           <h2 className="text-sm font-semibold mb-4 uppercase tracking-widest" style={{ color: '#888899' }}>
-            Your Invitations ({invitations.length})
+            Ваши приглашения ({invitations.length})
           </h2>
 
           {invitations.length === 0 ? (
             <div className="text-center py-16 rounded-2xl"
               style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
               <div className="text-5xl mb-4">💌</div>
-              <h3 className="text-lg font-semibold text-white mb-2">No invitations yet</h3>
-              <p className="text-sm" style={{ color: '#888899' }}>Create your first invitation to get started</p>
+              <h3 className="text-lg font-semibold text-white mb-2">Приглашений пока нет</h3>
+              <p className="text-sm" style={{ color: '#888899' }}>Создайте своё первое интерактивное приглашение выше!</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -342,21 +360,21 @@ export default function ClientPage({
             style={{ background: '#111118', border: '1px solid rgba(239,68,68,0.2)', boxShadow: '0 40px 80px rgba(0,0,0,0.6)' }}>
             <div className="text-center mb-5">
               <div className="text-4xl mb-3">🗑️</div>
-              <h3 className="text-lg font-bold text-white mb-1">Delete Invitation?</h3>
+              <h3 className="text-lg font-bold text-white mb-1">Удалить приглашение?</h3>
               <p className="text-sm" style={{ color: '#888899' }}>
-                Invitation for <strong className="text-white">{deleteTarget.girl_name}</strong> will be permanently deleted.
+                Приглашение для <strong className="text-white">{deleteTarget.girl_name}</strong> будет удалено навсегда.
               </p>
             </div>
             <div className="flex gap-3">
               <button onClick={() => setDeleteTarget(null)}
                 className="flex-1 py-2.5 rounded-xl text-sm font-medium"
                 style={{ background: 'rgba(255,255,255,0.05)', color: '#888899', border: '1px solid rgba(255,255,255,0.08)' }}>
-                Cancel
+                Отмена
               </button>
               <button onClick={() => handleDelete(deleteTarget)}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
                 style={{ background: 'rgba(239,68,68,0.9)', color: '#fff' }}>
-                Delete
+                Удалить
               </button>
             </div>
           </div>

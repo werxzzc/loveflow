@@ -21,13 +21,13 @@ export default function ResultsPage({
       try {
         const res = await fetch(`/api/results/${token}`);
         if (!res.ok) {
-          throw new Error('Results not found or inactive');
+          throw new Error('Результаты не найдены или неактивны');
         }
         const data = await res.json();
         setResult(data.result);
         setTheme(getTheme(data.invitation.theme));
       } catch (err: any) {
-        setError(err.message || 'Something went wrong');
+        setError(err.message || 'Что-то пошло не так');
       } finally {
         setLoading(false);
       }
@@ -40,7 +40,7 @@ export default function ResultsPage({
       <div className="min-h-screen flex items-center justify-center bg-[#080810] text-white">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500 mx-auto"></div>
-          <p className="text-sm text-gray-400">Fetching romantic results...</p>
+          <p className="text-sm text-gray-400">Загрузка ответов...</p>
         </div>
       </div>
     );
@@ -51,9 +51,9 @@ export default function ResultsPage({
       <div className="min-h-screen flex items-center justify-center bg-[#080810] text-white p-4">
         <div className="glass max-w-sm w-full p-8 rounded-2xl text-center space-y-4 border-red-500/20">
           <div className="text-4xl">🔒</div>
-          <h2 className="text-lg font-bold text-red-400">Results Unavailable</h2>
+          <h2 className="text-lg font-bold text-red-400">Результаты недоступны</h2>
           <p className="text-sm text-gray-400">
-            These results are no longer available or the link is incorrect.
+            Эти результаты больше недоступны или ссылка неверна.
           </p>
         </div>
       </div>
@@ -82,7 +82,7 @@ export default function ResultsPage({
           LoveFlow
         </h1>
         <p className="text-xs uppercase tracking-widest mt-1 opacity-60">
-          Invitation Answers
+          Ответы на приглашение
         </p>
       </div>
 
@@ -95,11 +95,11 @@ export default function ResultsPage({
           <div className="text-center space-y-2 pb-4 border-b border-white/5">
             <div className="text-5xl animate-float">❤️</div>
             <h2 className="text-2xl font-extrabold text-white" style={{ fontFamily: 'var(--font-playfair)' }}>
-              {result.girl_name || 'Sofia'} has answered!
+              {result.girl_name || 'София'} ответила!
             </h2>
             <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-gray-400 mt-2 font-light">
               <span>📅 {formatDateTime(result.completed_at)}</span>
-              <span>⏱️ Time taken: {formatDuration(result.time_taken_seconds || 0)}</span>
+              <span>⏱️ Время прохождения: {formatDuration(result.time_taken_seconds || 0)}</span>
             </div>
           </div>
 
@@ -114,7 +114,7 @@ export default function ResultsPage({
                 <div className="flex gap-2 items-start">
                   <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
                         style={{ backgroundColor: `${theme.colors.primary}20`, color: theme.colors.primaryLight }}>
-                    Q{idx + 1}
+                    В{idx + 1}
                   </span>
                   <p className="text-sm font-medium text-gray-200">
                     {ans.question_text}
@@ -141,7 +141,7 @@ export default function ResultsPage({
 
       {/* Footer */}
       <div className="text-center pb-4 text-xs opacity-40 z-10">
-        LoveFlow premium results.
+        Премиум-результаты LoveFlow.
       </div>
     </div>
   );

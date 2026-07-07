@@ -66,8 +66,8 @@ function ClientModal({
           style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 40px 80px rgba(0,0,0,0.6)' }}>
           <div className="text-center mb-6">
             <div className="text-4xl mb-3">🎉</div>
-            <h3 className="text-xl font-bold text-white mb-1">Client Created!</h3>
-            <p className="text-sm" style={{ color: '#888899' }}>Share this link with your client</p>
+            <h3 className="text-xl font-bold text-white mb-1">Клиент создан!</h3>
+            <p className="text-sm" style={{ color: '#888899' }}>Поделитесь этой ссылкой с вашим клиентом</p>
           </div>
           <div className="rounded-xl p-4 mb-4" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
             <p className="text-xs break-all" style={{ color: '#a78bfa', fontFamily: 'monospace' }}>{link}</p>
@@ -75,12 +75,12 @@ function ClientModal({
           <button onClick={copyLink}
             className="w-full py-3 rounded-xl text-sm font-semibold mb-3 transition-all"
             style={{ background: 'linear-gradient(135deg, #ec4899, #a78bfa)', color: '#fff' }}>
-            Copy Link
+            Копировать ссылку
           </button>
           <button onClick={() => { onSave(); onClose(); }}
             className="w-full py-3 rounded-xl text-sm font-medium"
             style={{ background: 'rgba(255,255,255,0.05)', color: '#888899', border: '1px solid rgba(255,255,255,0.08)' }}>
-            Done
+            Готово
           </button>
         </div>
       </div>
@@ -93,7 +93,7 @@ function ClientModal({
         style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 40px 80px rgba(0,0,0,0.6)' }}>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-bold text-white">
-            {mode === 'create' ? 'New Client' : 'Edit Client'}
+            {mode === 'create' ? 'Новый клиент' : 'Редактировать клиента'}
           </h3>
           <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-white/10"
             style={{ color: '#888899', minHeight: 'auto', minWidth: 'auto' }}>
@@ -103,9 +103,9 @@ function ClientModal({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {[
-            { label: 'Name', key: 'name', type: 'text', placeholder: 'Artem', required: true },
+            { label: 'Имя', key: 'name', type: 'text', placeholder: 'Артем', required: true },
             { label: 'Telegram', key: 'telegram', type: 'text', placeholder: '@username' },
-            { label: 'Comment', key: 'comment', type: 'text', placeholder: 'Any notes...' },
+            { label: 'Комментарий', key: 'comment', type: 'text', placeholder: 'Любые заметки...' },
           ].map(({ label, key, type, placeholder, required }) => (
             <div key={key}>
               <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: '#888899' }}>{label}</label>
@@ -124,7 +124,7 @@ function ClientModal({
           ))}
 
           <div>
-            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: '#888899' }}>Credits</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: '#888899' }}>Кредиты</label>
             <input
               type="number"
               min={0}
@@ -139,15 +139,15 @@ function ClientModal({
 
           {mode === 'edit' && (
             <div>
-              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: '#888899' }}>Status</label>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: '#888899' }}>Статус</label>
               <select
                 value={form.status}
                 onChange={(e) => setForm(f => ({ ...f, status: e.target.value as 'active' | 'inactive' }))}
                 className="w-full px-4 py-2.5 rounded-xl text-sm"
                 style={{ background: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)', color: '#f0f0f4', outline: 'none' }}
               >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+                <option value="active">Активен</option>
+                <option value="inactive">Неактивен</option>
               </select>
             </div>
           )}
@@ -156,12 +156,12 @@ function ClientModal({
             <button type="button" onClick={onClose}
               className="flex-1 py-3 rounded-xl text-sm font-medium transition-all"
               style={{ background: 'rgba(255,255,255,0.05)', color: '#888899', border: '1px solid rgba(255,255,255,0.08)' }}>
-              Cancel
+              Отмена
             </button>
             <button type="submit" disabled={loading}
               className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all"
               style={{ background: 'linear-gradient(135deg, #ec4899, #a78bfa)', color: '#fff', border: 'none' }}>
-              {loading ? 'Saving...' : mode === 'create' ? 'Create Client' : 'Save Changes'}
+              {loading ? 'Сохранение...' : mode === 'create' ? 'Создать клиента' : 'Сохранить изменения'}
             </button>
           </div>
         </form>
@@ -211,16 +211,16 @@ function ClientCard({
             color: client.status === 'active' ? '#34d399' : '#6b7280',
             border: `1px solid ${client.status === 'active' ? 'rgba(16,185,129,0.2)' : 'rgba(107,114,128,0.2)'}`,
           }}>
-          {client.status}
+          {client.status === 'active' ? 'Активен' : 'Неактивен'}
         </span>
       </div>
 
       {/* Credits */}
       <div className="mb-4">
         <div className="flex justify-between text-xs mb-1.5">
-          <span style={{ color: '#888899' }}>Credits</span>
+          <span style={{ color: '#888899' }}>Кредиты</span>
           <span className="font-semibold" style={{ color: remaining === 0 ? '#ef4444' : '#f0f0f4' }}>
-            {remaining} / {client.credits_total} remaining
+            Осталось {remaining} из {client.credits_total}
           </span>
         </div>
         <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
@@ -235,11 +235,11 @@ function ClientCard({
       {/* Meta */}
       <div className="grid grid-cols-2 gap-2 mb-4">
         <div className="rounded-lg p-2.5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-          <p className="text-xs mb-0.5" style={{ color: '#888899' }}>Used</p>
+          <p className="text-xs mb-0.5" style={{ color: '#888899' }}>Создано</p>
           <p className="text-sm font-semibold text-white">{client.credits_used}</p>
         </div>
         <div className="rounded-lg p-2.5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-          <p className="text-xs mb-0.5" style={{ color: '#888899' }}>Joined</p>
+          <p className="text-xs mb-0.5" style={{ color: '#888899' }}>Создан</p>
           <p className="text-sm font-semibold text-white">{formatDate(client.created_at)}</p>
         </div>
       </div>
@@ -255,12 +255,12 @@ function ClientCard({
         <button onClick={onCopyLink}
           className="flex-1 py-2 rounded-xl text-xs font-medium transition-all hover:bg-white/10"
           style={{ background: 'rgba(255,255,255,0.05)', color: '#a78bfa', border: '1px solid rgba(167,139,250,0.2)' }}>
-          Copy Link
+          Копировать ссылку
         </button>
         <button onClick={onEdit}
           className="flex-1 py-2 rounded-xl text-xs font-medium transition-all hover:bg-white/10"
           style={{ background: 'rgba(255,255,255,0.05)', color: '#f0f0f4', border: '1px solid rgba(255,255,255,0.08)' }}>
-          Edit
+          Редактировать
         </button>
         <button onClick={onDelete}
           className="py-2 px-3 rounded-xl text-xs font-medium transition-all hover:bg-red-500/20"
@@ -294,12 +294,12 @@ export default function AdminDashboard() {
       
       const contentType = res.headers.get('content-type') || '';
       if (!res.ok || !contentType.includes('application/json')) {
-        let errMsg = `Request failed (status ${res.status})`;
+        let errMsg = `Сбой запроса (код ${res.status})`;
         try {
           const errData = await res.json();
           errMsg = errData.error || errMsg;
         } catch {
-          // Response was not JSON
+          // Не JSON ответ
         }
         throw new Error(errMsg);
       }
@@ -307,14 +307,13 @@ export default function AdminDashboard() {
       const data = await res.json();
       setClients(Array.isArray(data) ? data : []);
     } catch (err: any) {
-      setApiError(err.message || 'Failed to fetch clients');
+      setApiError(err.message || 'Не удалось загрузить список клиентов');
     } finally {
       setLoading(false);
     }
   }, [router]);
 
   useEffect(() => { fetchClients(); }, [fetchClients]);
-
 
   async function handleDelete(client: Client) {
     await fetch(`/api/admin/clients/${client.id}`, { method: 'DELETE' });
@@ -361,13 +360,13 @@ export default function AdminDashboard() {
             <span className="text-xl">💌</span>
             <span className="font-bold text-white" style={{ fontFamily: 'var(--font-playfair)' }}>LoveFlow</span>
             <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(167,139,250,0.15)', color: '#a78bfa', border: '1px solid rgba(167,139,250,0.2)' }}>
-              Admin
+              Панель администратора
             </span>
           </div>
           <button onClick={handleLogout}
             className="text-xs px-3 py-1.5 rounded-lg transition-all hover:bg-white/10"
             style={{ color: '#888899', minHeight: 'auto', minWidth: 'auto' }}>
-            Sign out
+            Выйти
           </button>
         </div>
       </header>
@@ -376,9 +375,9 @@ export default function AdminDashboard() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-8">
           {[
-            { label: 'Total Clients', value: clients.length, icon: '👥' },
-            { label: 'Active Clients', value: activeClients, icon: '✅' },
-            { label: 'Invitations Used', value: usedCredits, icon: '💌' },
+            { label: 'Всего клиентов', value: clients.length, icon: '👥' },
+            { label: 'Активных клиентов', value: activeClients, icon: '✅' },
+            { label: 'Создано приглашений', value: usedCredits, icon: '💌' },
           ].map(({ label, value, icon }) => (
             <div key={label} className="rounded-2xl p-4"
               style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
@@ -398,7 +397,7 @@ export default function AdminDashboard() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search clients..."
+              placeholder="Поиск клиентов..."
               className="w-full pl-9 pr-4 py-2 rounded-xl text-sm transition-all"
               style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#f0f0f4', outline: 'none' }}
               onFocus={(e) => { e.target.style.border = '1px solid rgba(167,139,250,0.4)'; }}
@@ -413,7 +412,7 @@ export default function AdminDashboard() {
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
             style={{ background: 'linear-gradient(135deg, #ec4899, #a78bfa)', color: '#fff', boxShadow: '0 4px 16px rgba(236,72,153,0.3)', minHeight: 'auto' }}>
             <span>+</span>
-            New Client
+            Создать клиента
           </button>
         </div>
 
@@ -421,16 +420,16 @@ export default function AdminDashboard() {
         {apiError ? (
           <div className="glass p-8 rounded-2xl border-red-500/20 text-center space-y-4 max-w-lg mx-auto my-12 animate-scale-in">
             <div className="text-4xl text-red-500">⚠️</div>
-            <h3 className="text-lg font-bold text-red-400">Database Connection Error</h3>
+            <h3 className="text-lg font-bold text-red-400">Ошибка подключения к базе данных</h3>
             <p className="text-sm text-gray-400 leading-relaxed">
               {apiError}
             </p>
             <div className="text-xs text-left bg-black/40 p-4 rounded-xl font-mono text-gray-500 space-y-2 border border-white/5">
-              <p className="font-semibold text-gray-300">Possible fixes:</p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>Make sure your Supabase keys in <code className="text-pink-400">.env.local</code> are correct.</li>
-                <li>Make sure you ran the SQL tables schema script in your Supabase SQL editor.</li>
-                <li>Verify your network connectivity to your Supabase project.</li>
+              <p className="font-semibold text-gray-300">Возможные решения:</p>
+              <ul className="list-disc list-inside space-y-1 text-gray-400">
+                <li>Убедитесь, что ключи в файле <code className="text-pink-400">.env.local</code> прописаны верно.</li>
+                <li>Убедитесь, что вы создали таблицы с помощью SQL-скрипта в Supabase.</li>
+                <li>Проверьте сетевой доступ к вашему проекту Supabase.</li>
               </ul>
             </div>
             <button
@@ -438,7 +437,7 @@ export default function AdminDashboard() {
               className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-semibold hover:bg-white/10 transition-all"
               style={{ minHeight: 'auto' }}
             >
-              Retry Connection
+              Повторить попытку
             </button>
           </div>
         ) : loading ? (
@@ -452,10 +451,10 @@ export default function AdminDashboard() {
           <div className="text-center py-20">
             <div className="text-5xl mb-4">{search ? '🔍' : '👥'}</div>
             <h3 className="text-lg font-semibold text-white mb-2">
-              {search ? 'No clients found' : 'No clients yet'}
+              {search ? 'Клиенты не найдены' : 'Список клиентов пуст'}
             </h3>
             <p className="text-sm" style={{ color: '#888899' }}>
-              {search ? 'Try a different search term' : 'Create your first client to get started'}
+              {search ? 'Попробуйте изменить поисковый запрос' : 'Добавьте своего первого клиента, чтобы начать'}
             </p>
           </div>
         ) : (
@@ -489,21 +488,21 @@ export default function AdminDashboard() {
             style={{ background: '#111118', border: '1px solid rgba(239,68,68,0.2)', boxShadow: '0 40px 80px rgba(0,0,0,0.6)' }}>
             <div className="text-center mb-5">
               <div className="text-4xl mb-3">⚠️</div>
-              <h3 className="text-lg font-bold text-white mb-1">Delete Client?</h3>
+              <h3 className="text-lg font-bold text-white mb-1">Удалить клиента?</h3>
               <p className="text-sm" style={{ color: '#888899' }}>
-                <strong className="text-white">{deleteTarget.name}</strong> and all their invitations will be permanently deleted.
+                Клиент <strong className="text-white">{deleteTarget.name}</strong> и все его приглашения будут безвозвратно удалены.
               </p>
             </div>
             <div className="flex gap-3">
               <button onClick={() => setDeleteTarget(null)}
                 className="flex-1 py-2.5 rounded-xl text-sm font-medium"
                 style={{ background: 'rgba(255,255,255,0.05)', color: '#888899', border: '1px solid rgba(255,255,255,0.08)' }}>
-                Cancel
+                Отмена
               </button>
               <button onClick={() => handleDelete(deleteTarget)}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
                 style={{ background: 'rgba(239,68,68,0.9)', color: '#fff' }}>
-                Delete
+                Удалить
               </button>
             </div>
           </div>
@@ -514,7 +513,7 @@ export default function AdminDashboard() {
       {copied && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl text-sm font-medium animate-fade-in-up"
           style={{ background: 'rgba(16,185,129,0.9)', color: '#fff', backdropFilter: 'blur(10px)' }}>
-          ✓ Link copied!
+          ✓ Ссылка скопирована!
         </div>
       )}
     </div>

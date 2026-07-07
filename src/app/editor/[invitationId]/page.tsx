@@ -6,6 +6,8 @@ import { Invitation, Question, Answer, ThemeId } from '@/types';
 import { themeList, getTheme } from '@/lib/themes';
 import { questionTemplates } from '@/lib/templates';
 import { generateId } from '@/lib/utils';
+import { libraryCategories, libraryQuestions, LibraryQuestion } from '@/lib/library';
+
 
 // ─── Answer Row ───────────────────────────────────────────────────────────────
 function AnswerRow({
@@ -33,7 +35,7 @@ function AnswerRow({
         type="text"
         value={answer.text}
         onChange={(e) => onChange({ ...answer, text: e.target.value })}
-        placeholder="Answer text..."
+        placeholder="Текст ответа..."
         className="flex-1 text-sm bg-transparent border-none outline-none"
         style={{ color: '#f0f0f4' }}
       />
@@ -52,14 +54,14 @@ function AnswerRow({
       <button
         onClick={() => onChange({ ...answer, is_runaway: !answer.is_runaway })}
         className="px-2 py-1 rounded-lg text-xs font-medium transition-all"
-        title="Toggle runaway button"
+        title="Сделать кнопку убегающей"
         style={{
           background: answer.is_runaway ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.05)',
           color: answer.is_runaway ? '#f87171' : '#888899',
           border: `1px solid ${answer.is_runaway ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.08)'}`,
           minHeight: 'auto', minWidth: 'auto',
         }}>
-        {answer.is_runaway ? '🏃 On' : '🏃 Off'}
+        {answer.is_runaway ? '🏃 Вкл' : '🏃 Выкл'}
       </button>
       {/* Delete */}
       <button
@@ -120,7 +122,7 @@ function QuestionCard({
       <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
         <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
           style={{ background: 'rgba(167,139,250,0.15)', color: '#a78bfa' }}>
-          Q{index + 1}
+          В{index + 1}
         </span>
         <input
           type="text"
@@ -133,7 +135,7 @@ function QuestionCard({
           type="text"
           value={question.text}
           onChange={(e) => onChange({ ...question, text: e.target.value })}
-          placeholder="Question text..."
+          placeholder="Текст вопроса..."
           className="flex-1 text-sm font-medium bg-transparent border-none outline-none"
           style={{ color: '#f0f0f4' }}
         />
@@ -169,7 +171,7 @@ function QuestionCard({
             onClick={addAnswer}
             className="w-full py-2 rounded-xl text-xs font-medium border-dashed transition-all hover:bg-white/5"
             style={{ border: '1px dashed rgba(255,255,255,0.15)', color: '#888899', minHeight: 'auto' }}>
-            + Add Answer
+            + Добавить вариант ответа
           </button>
         </div>
       )}
@@ -203,10 +205,10 @@ function InvitePreview({ data }: { data: Partial<Invitation> }) {
                 {theme.name}
               </p>
               <h2 className="text-lg font-bold mb-2" style={{ color: theme.colors.text, fontFamily: 'var(--font-playfair)' }}>
-                {data.girl_name || 'Her Name'}
+                {data.girl_name || 'Имя девушки'}
               </h2>
               <p className="text-xs" style={{ color: theme.colors.textSecondary }}>
-                {data.title || 'Invitation Title'}
+                {data.title || 'Заголовок приглашения'}
               </p>
             </>
           ) : (
@@ -221,7 +223,7 @@ function InvitePreview({ data }: { data: Partial<Invitation> }) {
 
               <div className="text-2xl mb-2 mt-4">{questions[currentQ]?.emoji}</div>
               <p className="text-xs font-semibold mb-4" style={{ color: theme.colors.text, lineHeight: 1.4 }}>
-                {questions[currentQ]?.text || 'Question text'}
+                {questions[currentQ]?.text || 'Текст вопроса'}
               </p>
 
               <div className="w-full space-y-2">
@@ -294,6 +296,58 @@ export default function EditorPage({
     }
   }, [invitation]);
 
+  const [showLibrary, setShowLibrary] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>('romance');
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [recent, setRecent] = useState<string[]>([]);
+  const [addedQuestionsFeedback, setAddedQuestionsFeedback] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedFavorites = localStorage.getItem('lf_favorite_questions');
+      const savedRecent = localStorage.getItem('lf_recent_questions');
+      if (savedFavorites) setFavorites(JSON.parse(savedFavorites));
+      if (savedRecent) setRecent(JSON.parse(savedRecent));
+    }
+  }, []);
+
+  const toggleFavorite = (id: string) => {
+    setFavorites(prev => {
+      const updated = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id];
+      localStorage.setItem('lf_favorite_questions', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const addToRecent = (id: string) => {
+    setRecent(prev => {
+      const filtered = prev.filter(r => r !== id);
+      const updated = [id, ...filtered].slice(0, 8);
+      localStorage.setItem('lf_recent_questions', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const addQuestionFromLibrary = (libQ: LibraryQuestion) => {
+    const q: Question = {
+      id: generateId(),
+      text: libQ.text,
+      emoji: libQ.emoji,
+      answers: libQ.answers.map(ans => ({
+        ...ans,
+        id: generateId()
+      })) as Answer[]
+    };
+    update({ questions: [...(invitation?.questions ?? []), q] });
+    addToRecent(libQ.id);
+
+    setAddedQuestionsFeedback(prev => ({ ...prev, [libQ.id]: true }));
+    setTimeout(() => {
+      setAddedQuestionsFeedback(prev => ({ ...prev, [libQ.id]: false }));
+    }, 1500);
+  };
+
   // Auto-save with debounce
   const autoSave = useCallback(async (data: Partial<Invitation>) => {
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
@@ -319,12 +373,12 @@ export default function EditorPage({
   function addQuestion() {
     const q: Question = {
       id: generateId(),
-      text: 'New question?',
+      text: 'Новый вопрос?',
       emoji: '💭',
       answers: [
-        { id: generateId(), text: 'Yes!', emoji: '✅', color: '#10b981', is_runaway: false },
-        { id: generateId(), text: 'Maybe', emoji: '🤔', color: '#f59e0b', is_runaway: false },
-        { id: generateId(), text: 'No', emoji: '❌', color: '#6b7280', is_runaway: true },
+        { id: generateId(), text: 'Да!', emoji: '✅', color: '#10b981', is_runaway: false },
+        { id: generateId(), text: 'Возможно', emoji: '🤔', color: '#f59e0b', is_runaway: false },
+        { id: generateId(), text: 'Нет', emoji: '❌', color: '#6b7280', is_runaway: true },
       ],
     };
     update({ questions: [...(invitation?.questions ?? []), q] });
@@ -371,7 +425,7 @@ export default function EditorPage({
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#080810' }}>
         <div className="text-center">
           <div className="text-4xl mb-4 animate-pulse">✏️</div>
-          <p className="text-sm" style={{ color: '#888899' }}>Loading editor...</p>
+          <p className="text-sm" style={{ color: '#888899' }}>Загрузка редактора...</p>
         </div>
       </div>
     );
@@ -382,7 +436,7 @@ export default function EditorPage({
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#080810' }}>
         <div className="text-center">
           <div className="text-4xl mb-4">❌</div>
-          <p className="text-sm" style={{ color: '#888899' }}>Invitation not found.</p>
+          <p className="text-sm" style={{ color: '#888899' }}>Приглашение не найдено.</p>
         </div>
       </div>
     );
@@ -399,16 +453,16 @@ export default function EditorPage({
           onClick={() => router.push(clientToken ? `/client/${clientToken}` : '/admin/dashboard')}
           className="flex items-center gap-2 text-sm transition-all hover:opacity-70"
           style={{ color: '#888899', minHeight: 'auto', minWidth: 'auto' }}>
-          ← Back
+          ← Назад
         </button>
         <div className="h-4 w-px" style={{ background: 'rgba(255,255,255,0.1)' }} />
         <span className="text-sm text-white font-medium flex-1">
-          Editing: {invitation.girl_name || 'Invitation'}
+          Редактор: {invitation.girl_name || 'Приглашение'}
         </span>
 
         {/* Save status */}
         <div className="text-xs" style={{ color: saved ? '#34d399' : '#888899' }}>
-          {saving ? 'Saving...' : saved ? '✓ Saved' : 'Auto-save on'}
+          {saving ? 'Сохранение...' : saved ? '✓ Сохранено' : 'Автосохранение'}
         </div>
 
         {/* Copy link */}
@@ -421,7 +475,7 @@ export default function EditorPage({
               border: `1px solid ${copied ? 'rgba(16,185,129,0.3)' : 'rgba(167,139,250,0.3)'}`,
               minHeight: 'auto',
             }}>
-            {copied ? '✓ Copied!' : '🔗 Copy Link'}
+            {copied ? '✓ Скопировано!' : '🔗 Ссылка'}
           </button>
         )}
       </header>
@@ -443,7 +497,7 @@ export default function EditorPage({
                   background: 'transparent',
                   minHeight: 'auto',
                 }}>
-                {tab === 'info' ? '✏️ Info' : tab === 'questions' ? '❓ Questions' : '🎨 Theme'}
+                {tab === 'info' ? '✏️ Инфо' : tab === 'questions' ? '❓ Вопросы' : '🎨 Тема'}
               </button>
             ))}
           </div>
@@ -453,12 +507,12 @@ export default function EditorPage({
             {activeTab === 'info' && (
               <>
                 {[
-                  { label: "Girl's Name", key: 'girl_name', placeholder: 'Sofia' },
-                  { label: 'Title', key: 'title', placeholder: 'Will you go out with me?' },
-                  { label: 'Subtitle', key: 'subtitle', placeholder: 'A little question for you...' },
-                  { label: 'Welcome Message', key: 'welcome_message', placeholder: 'Hey! I made something special for you ❤️' },
-                  { label: 'Description', key: 'description', placeholder: 'Answer a few questions for me...' },
-                  { label: 'Final Message', key: 'final_message', placeholder: 'Thank you! Your answers mean the world to me ❤️' },
+                  { label: "Имя девушки", key: 'girl_name', placeholder: 'София' },
+                  { label: 'Заголовок', key: 'title', placeholder: 'Пойдешь со мной на свидание?' },
+                  { label: 'Подзаголовок', key: 'subtitle', placeholder: 'Небольшой вопрос для тебя...' },
+                  { label: 'Приветственное сообщение', key: 'welcome_message', placeholder: 'Привет! Я сделал кое-что особенное для тебя ❤️' },
+                  { label: 'Описание', key: 'description', placeholder: 'Ответь на пару вопросов для меня...' },
+                  { label: 'Финальное сообщение', key: 'final_message', placeholder: 'Спасибо! Твои ответы очень важны для меня ❤️' },
                 ].map(({ label, key, placeholder }) => (
                   <div key={key}>
                     <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: '#888899' }}>
@@ -495,16 +549,24 @@ export default function EditorPage({
             {/* ─ QUESTIONS TAB ─ */}
             {activeTab === 'questions' && (
               <>
-                <div className="flex gap-2 mb-2">
+                <div className="grid grid-cols-3 gap-2 mb-4">
                   <button onClick={addQuestion}
-                    className="flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                    style={{ background: `${theme.colors.primary}22`, color: theme.colors.primary, border: `1px solid ${theme.colors.primary}44`, minHeight: 'auto' }}>
-                    + Add Question
+                    className="py-2.5 px-1 rounded-xl text-[10px] font-semibold transition-all text-center flex flex-col items-center justify-center gap-1.5 cursor-pointer hover:opacity-80"
+                    style={{ background: `${theme.colors.primary}22`, color: theme.colors.primary, border: `1px solid ${theme.colors.primary}44`, minHeight: '56px' }}>
+                    <span className="text-sm">➕</span>
+                    <span>Вопрос</span>
                   </button>
                   <button onClick={() => setShowTemplates(true)}
-                    className="flex-1 py-2.5 rounded-xl text-xs font-medium transition-all"
-                    style={{ background: 'rgba(255,255,255,0.05)', color: '#f0f0f4', border: '1px solid rgba(255,255,255,0.08)', minHeight: 'auto' }}>
-                    📋 Templates
+                    className="py-2.5 px-1 rounded-xl text-[10px] font-medium transition-all text-center flex flex-col items-center justify-center gap-1.5 cursor-pointer hover:bg-white/5"
+                    style={{ background: 'rgba(255,255,255,0.04)', color: '#f0f0f4', border: '1px solid rgba(255,255,255,0.08)', minHeight: '56px' }}>
+                    <span className="text-sm">📋</span>
+                    <span>Шаблоны</span>
+                  </button>
+                  <button onClick={() => setShowLibrary(true)}
+                    className="py-2.5 px-1 rounded-xl text-[10px] font-medium transition-all text-center flex flex-col items-center justify-center gap-1.5 cursor-pointer hover:bg-white/5"
+                    style={{ background: 'rgba(255,255,255,0.04)', color: '#a78bfa', border: '1px solid rgba(167,139,250,0.2)', minHeight: '56px' }}>
+                    <span className="text-sm">📚</span>
+                    <span>Библиотека</span>
                   </button>
                 </div>
 
@@ -512,7 +574,7 @@ export default function EditorPage({
                   <div className="text-center py-10 rounded-xl"
                     style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
                     <div className="text-3xl mb-2">❓</div>
-                    <p className="text-xs" style={{ color: '#888899' }}>No questions yet. Add one or use a template.</p>
+                    <p className="text-xs" style={{ color: '#888899' }}>Вопросов пока нет. Создайте новый или выберите готовый шаблон.</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -578,7 +640,7 @@ export default function EditorPage({
           <div className="w-full max-w-md rounded-2xl p-6 animate-scale-in"
             style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 40px 80px rgba(0,0,0,0.6)', maxHeight: '80vh', overflowY: 'auto' }}>
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-white">Question Templates</h3>
+              <h3 className="text-lg font-bold text-white">Шаблоны вопросов</h3>
               <button onClick={() => setShowTemplates(false)}
                 className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10"
                 style={{ color: '#888899', minHeight: 'auto', minWidth: 'auto' }}>✕</button>
@@ -592,11 +654,257 @@ export default function EditorPage({
                     <span className="text-2xl">{t.emoji}</span>
                     <div>
                       <p className="text-sm font-semibold text-white">{t.name}</p>
-                      <p className="text-xs mt-0.5" style={{ color: '#888899' }}>{t.description} · {t.questions.length} questions</p>
+                      <p className="text-xs mt-0.5" style={{ color: '#888899' }}>{t.description} · {t.questions.length} вопросов</p>
                     </div>
                   </div>
                 </button>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── QUESTION LIBRARY MODAL ───────────────────────────────────────── */}
+      {showLibrary && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
+          style={{ background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(16px)' }}
+          onClick={(e) => { if (e.target === e.currentTarget) { setShowLibrary(false); setSearchQuery(''); } }}
+        >
+          <div
+            className="w-full max-w-4xl rounded-[28px] overflow-hidden flex flex-col"
+            style={{
+              background: '#0d0d17',
+              border: '1px solid rgba(255,255,255,0.09)',
+              boxShadow: '0 50px 100px rgba(0,0,0,0.85)',
+              height: 'min(88vh, 680px)',
+              animation: 'scaleIn 0.22s cubic-bezier(0.34,1.56,0.64,1)',
+            }}
+          >
+            {/* ── Header ── */}
+            <div
+              className="flex items-center gap-3 px-5 py-4 flex-shrink-0"
+              style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+            >
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+                style={{ background: 'linear-gradient(135deg,#a78bfa22,#ec489922)', border: '1px solid rgba(167,139,250,0.3)' }}>
+                📚
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-white leading-none mb-0.5">Библиотека вопросов</h3>
+                <p className="text-[10px]" style={{ color: '#666677' }}>Готовые вопросы и варианты ответов для вашего опроса</p>
+              </div>
+
+              {/* Search */}
+              <div className="relative flex-1 max-w-xs">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ pointerEvents: 'none', opacity: 0.4 }}>🔍</span>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Поиск вопросов..."
+                  className="w-full pl-9 pr-4 py-2 rounded-xl text-xs"
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: '#f0f0f4',
+                    outline: 'none',
+                  }}
+                  onFocus={(e) => { e.target.style.border = `1px solid ${theme.colors.primary}55`; }}
+                  onBlur={(e) => { e.target.style.border = '1px solid rgba(255,255,255,0.08)'; }}
+                />
+              </div>
+
+              <button
+                onClick={() => { setShowLibrary(false); setSearchQuery(''); }}
+                className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors hover:bg-white/10 cursor-pointer flex-shrink-0"
+                style={{ color: '#666677', minHeight: 'auto', minWidth: 'auto' }}
+              >✕</button>
+            </div>
+
+            {/* ── Body ── */}
+            <div className="flex flex-1 overflow-hidden">
+
+              {/* Left sidebar — categories */}
+              <div
+                className="w-[190px] flex-shrink-0 flex flex-col gap-0.5 p-3 overflow-y-auto"
+                style={{ borderRight: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.15)' }}
+              >
+                {/* Special: Favorites */}
+                <button
+                  onClick={() => setSelectedCategory('favorites')}
+                  className="px-3 py-2.5 rounded-xl text-xs font-medium text-left flex items-center justify-between transition-all cursor-pointer"
+                  style={{
+                    background: selectedCategory === 'favorites' ? 'rgba(251,191,36,0.12)' : 'transparent',
+                    color: selectedCategory === 'favorites' ? '#fbbf24' : '#666677',
+                    border: selectedCategory === 'favorites' ? '1px solid rgba(251,191,36,0.25)' : '1px solid transparent',
+                    minHeight: 'auto',
+                  }}
+                >
+                  <span>⭐ Избранное</span>
+                  <span className="text-[10px] opacity-60 ml-1">{favorites.length}</span>
+                </button>
+
+                {/* Special: Recent */}
+                <button
+                  onClick={() => setSelectedCategory('recent')}
+                  className="px-3 py-2.5 rounded-xl text-xs font-medium text-left flex items-center justify-between transition-all cursor-pointer"
+                  style={{
+                    background: selectedCategory === 'recent' ? 'rgba(255,255,255,0.07)' : 'transparent',
+                    color: selectedCategory === 'recent' ? '#c4c4d4' : '#666677',
+                    border: selectedCategory === 'recent' ? '1px solid rgba(255,255,255,0.12)' : '1px solid transparent',
+                    minHeight: 'auto',
+                  }}
+                >
+                  <span>⏳ Недавние</span>
+                  <span className="text-[10px] opacity-60 ml-1">{recent.length}</span>
+                </button>
+
+                <div className="my-1.5 mx-2 border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }} />
+
+                {/* Standard categories */}
+                {libraryCategories.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(cat.id)}
+                    className="px-3 py-2.5 rounded-xl text-xs font-medium text-left flex items-center gap-2 transition-all cursor-pointer hover:bg-white/5"
+                    style={{
+                      background: selectedCategory === cat.id ? 'rgba(255,255,255,0.06)' : 'transparent',
+                      color: selectedCategory === cat.id ? '#e8e8f4' : '#666677',
+                      border: selectedCategory === cat.id ? '1px solid rgba(255,255,255,0.1)' : '1px solid transparent',
+                      minHeight: 'auto',
+                    }}
+                  >
+                    <span className="text-sm">{cat.emoji}</span>
+                    <span className="truncate">{cat.name}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Right panel — questions */}
+              <div className="flex-1 overflow-y-auto p-4" style={{ background: '#08080f' }}>
+                {(() => {
+                  let toShow: LibraryQuestion[] = [];
+
+                  if (searchQuery.trim()) {
+                    const q = searchQuery.toLowerCase();
+                    toShow = libraryQuestions.filter(lq =>
+                      lq.text.toLowerCase().includes(q) ||
+                      (libraryCategories.find(c => c.id === lq.category)?.name.toLowerCase() ?? '').includes(q)
+                    );
+                  } else if (selectedCategory === 'favorites') {
+                    toShow = libraryQuestions.filter(lq => favorites.includes(lq.id));
+                  } else if (selectedCategory === 'recent') {
+                    toShow = recent
+                      .map(id => libraryQuestions.find(lq => lq.id === id))
+                      .filter((lq): lq is LibraryQuestion => !!lq);
+                  } else if (selectedCategory) {
+                    toShow = libraryQuestions.filter(lq => lq.category === selectedCategory);
+                  } else {
+                    toShow = libraryQuestions;
+                  }
+
+                  if (toShow.length === 0) {
+                    return (
+                      <div className="flex flex-col items-center justify-center h-full text-center py-16">
+                        <div className="text-5xl mb-4 opacity-30">
+                          {selectedCategory === 'favorites' ? '⭐' : selectedCategory === 'recent' ? '⏳' : '🔍'}
+                        </div>
+                        <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                          {selectedCategory === 'favorites'
+                            ? 'Нет избранных вопросов'
+                            : selectedCategory === 'recent'
+                            ? 'Вы ещё не добавляли вопросы'
+                            : 'Ничего не найдено'}
+                        </p>
+                        <p className="text-xs mt-1" style={{ color: '#444455' }}>
+                          {selectedCategory === 'favorites'
+                            ? 'Нажмите ☆ на любом вопросе, чтобы сохранить'
+                            : selectedCategory === 'recent'
+                            ? 'Добавьте вопрос из любой категории'
+                            : 'Попробуйте другой запрос'}
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="grid gap-3">
+                      {toShow.map(libQ => {
+                        const isFav = favorites.includes(libQ.id);
+                        const isAdded = !!addedQuestionsFeedback[libQ.id];
+                        return (
+                          <div
+                            key={libQ.id}
+                            className="rounded-2xl p-4 flex gap-4 items-start transition-all"
+                            style={{
+                              background: 'rgba(255,255,255,0.02)',
+                              border: isAdded
+                                ? '1px solid rgba(16,185,129,0.3)'
+                                : '1px solid rgba(255,255,255,0.06)',
+                            }}
+                          >
+                            {/* Star */}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); toggleFavorite(libQ.id); }}
+                              className="flex-shrink-0 text-base leading-none mt-0.5 transition-all hover:scale-125 active:scale-95 cursor-pointer"
+                              style={{ minHeight: 'auto', minWidth: 'auto', color: isFav ? '#fbbf24' : '#444455' }}
+                              title={isFav ? 'Убрать из избранного' : 'В избранное'}
+                            >
+                              {isFav ? '⭐' : '☆'}
+                            </button>
+
+                            {/* Content */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 mb-2">
+                                <span className="text-sm">{libQ.emoji}</span>
+                                <p className="text-xs font-semibold text-white leading-snug">{libQ.text}</p>
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                {libQ.answers.map((ans, i) => (
+                                  <span
+                                    key={i}
+                                    className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full font-medium"
+                                    style={{
+                                      background: `${ans.color}18`,
+                                      border: `1px solid ${ans.color}28`,
+                                      color: '#c4c4d4',
+                                    }}
+                                  >
+                                    <span>{ans.emoji}</span>
+                                    <span>{ans.text}</span>
+                                    {ans.is_runaway && (
+                                      <span className="text-[8px] ml-0.5 text-red-400">🏃</span>
+                                    )}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Add button */}
+                            <button
+                              onClick={() => addQuestionFromLibrary(libQ)}
+                              className="flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-bold transition-all cursor-pointer hover:scale-[1.03] active:scale-95"
+                              style={{
+                                background: isAdded
+                                  ? 'rgba(16,185,129,0.15)'
+                                  : 'linear-gradient(135deg,#ec4899,#a78bfa)',
+                                border: isAdded ? '1px solid rgba(16,185,129,0.35)' : 'none',
+                                color: isAdded ? '#34d399' : '#fff',
+                                boxShadow: isAdded ? 'none' : '0 4px 14px rgba(236,72,153,0.25)',
+                                minHeight: 'auto',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {isAdded ? <>✓ Добавлено</> : <>➕ Добавить</>}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
           </div>
         </div>
