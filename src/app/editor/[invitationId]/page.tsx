@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, use } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Invitation, Question, Answer, ThemeId } from '@/types';
+import { Invitation, Question, Answer, ThemeId, ResultAnswer } from '@/types';
 import { themeList, getTheme } from '@/lib/themes';
 import { questionTemplates } from '@/lib/templates';
 import { generateId } from '@/lib/utils';
@@ -298,10 +298,23 @@ export default function EditorPage({
 
   const [showLibrary, setShowLibrary] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>('romance');
+  const [selectedCategory, setSelectedCategory] = useState<string>('romance');
+  const [selectedLibQuestions, setSelectedLibQuestions] = useState<string[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [recent, setRecent] = useState<string[]>([]);
   const [addedQuestionsFeedback, setAddedQuestionsFeedback] = useState<Record<string, boolean>>({});
+  const [libView, setLibView] = useState<'categories' | 'questions'>('categories');
+
+  // View as the Girl simulation states
+  const [viewAsGirlMode, setViewAsGirlMode] = useState(false);
+  const [simStep, setSimStep] = useState<'welcome' | 'questions' | 'completed'>('welcome');
+  const [simQIndex, setSimQIndex] = useState(0);
+  const [simAnswers, setSimAnswers] = useState<ResultAnswer[]>([]);
+  const [simRunawayOffset, setSimRunawayOffset] = useState({ x: 0, y: 0 });
+  const [simEscapeCount, setSimEscapeCount] = useState(0);
+  const [simSpeechMessage, setSimSpeechMessage] = useState('');
+  const [simShowSpeech, setSimShowSpeech] = useState(false);
+  const [simParticles, setSimParticles] = useState<{ id: number; tx: number; ty: number }[]>([]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -347,6 +360,40 @@ export default function EditorPage({
       setAddedQuestionsFeedback(prev => ({ ...prev, [libQ.id]: false }));
     }, 1500);
   };
+
+  const addSelectedQuestionsFromLibrary = () => {
+    const selectedObjs = libraryQuestions.filter(lq => selectedLibQuestions.includes(lq.id));
+    const newQuestions = selectedObjs.map(libQ => ({
+      id: generateId(),
+      text: libQ.text,
+      emoji: libQ.emoji,
+      answers: libQ.answers.map(ans => ({
+        ...ans,
+        id: generateId()
+      })) as Answer[]
+    }));
+    update({ questions: [...(invitation?.questions ?? []), ...newQuestions] });
+    selectedObjs.forEach(lq => addToRecent(lq.id));
+    setSelectedLibQuestions([]);
+    setShowLibrary(false);
+  };
+
+  const runawayMessages = [
+    "Даже не думай 😏",
+    "Не сегодня 😄",
+    "Мимо 🤭",
+    "Такой вариант сегодня недоступен ❤️",
+    "А может всё-таки «Да»? 🥹",
+    "Попробуй другую кнопку 😉",
+    "Он ведь старался 💖",
+    "Дай ему шанс 🌸",
+    "Кажется, ты промахнулась 😄",
+    "Даже не пытайся 😝",
+    "Нет сегодня в отпуске 😂",
+    "Здесь принимается только любовь ❤️",
+    "Эта кнопка решила пожить ещё 😅",
+    "Не получится 😌"
+  ];
 
   // Auto-save with debounce
   const autoSave = useCallback(async (data: Partial<Invitation>) => {
@@ -445,7 +492,7 @@ export default function EditorPage({
   const theme = getTheme(invitation.theme ?? 'sakura');
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: '#080810' }}>
+    <div className="flex flex-col" style={{ background: '#080810', minHeight: '100dvh' }}>
       {/* Top bar */}
       <header className="flex-shrink-0 h-14 border-b flex items-center px-4 gap-3 z-30"
         style={{ background: 'rgba(8,8,16,0.95)', backdropFilter: 'blur(20px)', borderColor: 'rgba(255,255,255,0.06)' }}>
@@ -480,9 +527,9 @@ export default function EditorPage({
         )}
       </header>
 
-      <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
+      <div className="flex flex-1 flex-col md:flex-row md:overflow-hidden" style={{ minHeight: 0 }}>
         {/* ─── LEFT PANEL: STEP-BY-STEP WIZARD ─────────────────────────────────── */}
-        <div className={`w-full md:w-[450px] flex-shrink-0 flex flex-col border-r overflow-hidden ${step === 4 ? 'hidden md:flex' : 'flex'}`}
+        <div className={`w-full md:w-[450px] flex-shrink-0 flex flex-col border-r ${step === 4 ? 'hidden md:flex' : 'flex'}`}
           style={{ borderColor: 'rgba(255,255,255,0.06)', background: '#0c0c18' }}>
           
           {/* Wizard Step Tracker Header */}
@@ -508,7 +555,7 @@ export default function EditorPage({
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-5 space-y-5">
+          <div className="flex-1 p-5 space-y-5 md:overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
             {/* ─ STEP 1: INFO ─ */}
             {step === 1 && (
               <div className="space-y-4 animate-fade-in-up">
@@ -684,7 +731,7 @@ export default function EditorPage({
           </div>
 
           {/* Stepper Wizard Footer Controls */}
-          <div className="p-4 border-t flex items-center justify-between gap-3 bg-[#080810]/95 backdrop-blur-md"
+          <div className="p-4 border-t flex items-center justify-between gap-3 bg-[#080810]/95 backdrop-blur-md sticky bottom-0 md:static"
             style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
             <button
               onClick={() => setStep(prev => Math.max(1, prev - 1))}
@@ -713,11 +760,11 @@ export default function EditorPage({
           </div>
         </div>
 
-        {/* ─── RIGHT PANEL: PREVIEW (Visible side-by-side on desktop, takes full screen on mobile Step 4) ─── */}
+        {/* ─── RIGHT PANEL: PREVIEW ─── */}
         <div className={`flex-1 items-center justify-center p-4 relative ${step === 4 ? 'flex' : 'hidden md:flex'}`}
-          style={{ background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.01) 0%, transparent 70%)' }}>
+          style={{ background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.01) 0%, transparent 70%)', minHeight: step === 4 ? '100dvh' : 'auto' }}>
           
-          {/* Mobile Back Button to step out of preview screen on smartphones */}
+          {/* Mobile Back Button */}
           {step === 4 && (
             <button
               onClick={() => setStep(3)}
@@ -762,46 +809,80 @@ export default function EditorPage({
         </div>
       )}
 
-      {/* ─── QUESTION LIBRARY MODAL ───────────────────────────────────────── */}
+      {/* ─── QUESTION LIBRARY MODAL (Mobile-native bottom sheet) ───────────────── */}
       {showLibrary && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
-          style={{ background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(16px)' }}
-          onClick={(e) => { if (e.target === e.currentTarget) { setShowLibrary(false); setSearchQuery(''); } }}
+          className="fixed inset-0 z-50"
+          style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(12px)' }}
+          onClick={(e) => { if (e.target === e.currentTarget) { setShowLibrary(false); setSearchQuery(''); setLibView('categories'); } }}
         >
+          {/* Sheet */}
           <div
-            className="w-full max-w-4xl rounded-[28px] overflow-hidden flex flex-col"
+            className="absolute bottom-0 left-0 right-0 md:relative md:inset-auto md:m-auto flex flex-col"
             style={{
-              background: '#0d0d17',
+              background: '#0d0d1a',
+              borderRadius: '28px 28px 0 0',
+              maxHeight: '92dvh',
+              height: '92dvh',
               border: '1px solid rgba(255,255,255,0.09)',
-              boxShadow: '0 50px 100px rgba(0,0,0,0.85)',
-              height: 'min(88vh, 680px)',
-              animation: 'scaleIn 0.22s cubic-bezier(0.34,1.56,0.64,1)',
+              boxShadow: '0 -20px 60px rgba(0,0,0,0.7)',
+              animation: 'slideUpSheet 0.3s cubic-bezier(0.32,0.72,0,1)',
             }}
           >
+            {/* Drag handle */}
+            <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+              <div className="w-10 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
+            </div>
+
             {/* ── Header ── */}
-            <div
-              className="flex items-center gap-3 px-5 py-4 flex-shrink-0"
-              style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
-            >
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
-                style={{ background: 'linear-gradient(135deg,#a78bfa22,#ec489922)', border: '1px solid rgba(167,139,250,0.3)' }}>
-                📚
-              </div>
-              <div className="flex-1">
-                <h3 className="text-sm font-bold text-white leading-none mb-0.5">Библиотека вопросов</h3>
-                <p className="text-[10px]" style={{ color: '#666677' }}>Готовые вопросы и варианты ответов для вашего опроса</p>
+            <div className="px-5 pt-2 pb-3 flex-shrink-0">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2.5">
+                  {libView === 'questions' && (
+                    <button
+                      onClick={() => { setLibView('categories'); setSearchQuery(''); }}
+                      className="flex items-center justify-center w-8 h-8 rounded-xl transition-all"
+                      style={{ background: 'rgba(255,255,255,0.05)', color: '#a0a0b8', minHeight: 'auto', minWidth: 'auto' }}
+                    >
+                      ←
+                    </button>
+                  )}
+                  <div>
+                    <h3 className="text-base font-bold text-white leading-tight">
+                      {libView === 'categories'
+                        ? '📚 Библиотека вопросов'
+                        : (() => {
+                            if (selectedCategory === 'favorites') return '⭐ Избранное';
+                            if (selectedCategory === 'recent') return '⏳ Недавние';
+                            const cat = libraryCategories.find(c => c.id === selectedCategory);
+                            return cat ? `${cat.emoji} ${cat.name}` : 'Вопросы';
+                          })()}
+                    </h3>
+                    {libView === 'categories' && (
+                      <p className="text-[11px] mt-0.5" style={{ color: '#666677' }}>Выберите категорию</p>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={() => { setShowLibrary(false); setSearchQuery(''); setLibView('categories'); }}
+                  className="w-9 h-9 rounded-2xl flex items-center justify-center transition-all hover:bg-white/10"
+                  style={{ background: 'rgba(255,255,255,0.04)', color: '#666677', minHeight: 'auto', minWidth: 'auto' }}
+                >✕</button>
               </div>
 
-              {/* Search */}
-              <div className="relative flex-1 max-w-xs">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ pointerEvents: 'none', opacity: 0.4 }}>🔍</span>
+              {/* Search bar — visible on both views */}
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base opacity-40" style={{ pointerEvents: 'none' }}>🔍</span>
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Поиск вопросов..."
-                  className="w-full pl-9 pr-4 py-2 rounded-xl text-xs"
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    if (e.target.value.trim() && libView === 'categories') setLibView('questions');
+                    if (!e.target.value.trim() && libView === 'questions') setLibView('categories');
+                  }}
+                  placeholder="Поиск по всем вопросам..."
+                  className="w-full pl-10 pr-4 py-3 rounded-2xl text-sm"
                   style={{
                     background: 'rgba(255,255,255,0.05)',
                     border: '1px solid rgba(255,255,255,0.08)',
@@ -812,78 +893,71 @@ export default function EditorPage({
                   onBlur={(e) => { e.target.style.border = '1px solid rgba(255,255,255,0.08)'; }}
                 />
               </div>
-
-              <button
-                onClick={() => { setShowLibrary(false); setSearchQuery(''); }}
-                className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors hover:bg-white/10 cursor-pointer flex-shrink-0"
-                style={{ color: '#666677', minHeight: 'auto', minWidth: 'auto' }}
-              >✕</button>
             </div>
 
-            {/* ── Body ── */}
-            <div className="flex flex-1 overflow-hidden">
-
-              {/* Left sidebar — categories */}
-              <div
-                className="w-[190px] flex-shrink-0 flex flex-col gap-0.5 p-3 overflow-y-auto"
-                style={{ borderRight: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.15)' }}
-              >
-                {/* Special: Favorites */}
-                <button
-                  onClick={() => setSelectedCategory('favorites')}
-                  className="px-3 py-2.5 rounded-xl text-xs font-medium text-left flex items-center justify-between transition-all cursor-pointer"
-                  style={{
-                    background: selectedCategory === 'favorites' ? 'rgba(251,191,36,0.12)' : 'transparent',
-                    color: selectedCategory === 'favorites' ? '#fbbf24' : '#666677',
-                    border: selectedCategory === 'favorites' ? '1px solid rgba(251,191,36,0.25)' : '1px solid transparent',
-                    minHeight: 'auto',
-                  }}
-                >
-                  <span>⭐ Избранное</span>
-                  <span className="text-[10px] opacity-60 ml-1">{favorites.length}</span>
-                </button>
-
-                {/* Special: Recent */}
-                <button
-                  onClick={() => setSelectedCategory('recent')}
-                  className="px-3 py-2.5 rounded-xl text-xs font-medium text-left flex items-center justify-between transition-all cursor-pointer"
-                  style={{
-                    background: selectedCategory === 'recent' ? 'rgba(255,255,255,0.07)' : 'transparent',
-                    color: selectedCategory === 'recent' ? '#c4c4d4' : '#666677',
-                    border: selectedCategory === 'recent' ? '1px solid rgba(255,255,255,0.12)' : '1px solid transparent',
-                    minHeight: 'auto',
-                  }}
-                >
-                  <span>⏳ Недавние</span>
-                  <span className="text-[10px] opacity-60 ml-1">{recent.length}</span>
-                </button>
-
-                <div className="my-1.5 mx-2 border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }} />
-
-                {/* Standard categories */}
-                {libraryCategories.map(cat => (
+            {/* ── CATEGORIES VIEW ── */}
+            {libView === 'categories' && !searchQuery.trim() && (
+              <div className="flex-1 overflow-y-auto px-4 pb-8" style={{ WebkitOverflowScrolling: 'touch' }}>
+                {/* Special tabs */}
+                <div className="grid grid-cols-2 gap-3 mb-5">
                   <button
-                    key={cat.id}
-                    onClick={() => setSelectedCategory(cat.id)}
-                    className="px-3 py-2.5 rounded-xl text-xs font-medium text-left flex items-center gap-2 transition-all cursor-pointer hover:bg-white/5"
-                    style={{
-                      background: selectedCategory === cat.id ? 'rgba(255,255,255,0.06)' : 'transparent',
-                      color: selectedCategory === cat.id ? '#e8e8f4' : '#666677',
-                      border: selectedCategory === cat.id ? '1px solid rgba(255,255,255,0.1)' : '1px solid transparent',
-                      minHeight: 'auto',
-                    }}
+                    onClick={() => { setSelectedCategory('favorites'); setLibView('questions'); }}
+                    className="flex items-center gap-3 p-4 rounded-2xl text-left transition-all active:scale-95"
+                    style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)', minHeight: '64px' }}
                   >
-                    <span className="text-sm">{cat.emoji}</span>
-                    <span className="truncate">{cat.name}</span>
+                    <span className="text-2xl">⭐</span>
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: '#fbbf24' }}>Избранное</p>
+                      <p className="text-[10px]" style={{ color: '#a8850a' }}>{favorites.length} вопросов</p>
+                    </div>
                   </button>
-                ))}
-              </div>
+                  <button
+                    onClick={() => { setSelectedCategory('recent'); setLibView('questions'); }}
+                    className="flex items-center gap-3 p-4 rounded-2xl text-left transition-all active:scale-95"
+                    style={{ background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)', minHeight: '64px' }}
+                  >
+                    <span className="text-2xl">⏳</span>
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: '#a78bfa' }}>Недавние</p>
+                      <p className="text-[10px]" style={{ color: '#7055c4' }}>{recent.length} вопросов</p>
+                    </div>
+                  </button>
+                </div>
 
-              {/* Right panel — questions */}
-              <div className="flex-1 overflow-y-auto p-4" style={{ background: '#08080f' }}>
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: '#444455' }}>Категории</p>
+
+                {/* Category grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  {libraryCategories.map(cat => {
+                    const count = libraryQuestions.filter(lq => lq.category === cat.id).length;
+                    return (
+                      <button
+                        key={cat.id}
+                        onClick={() => { setSelectedCategory(cat.id); setLibView('questions'); }}
+                        className="flex items-center gap-3 p-4 rounded-2xl text-left transition-all active:scale-95 hover:bg-white/5"
+                        style={{
+                          background: 'rgba(255,255,255,0.03)',
+                          border: '1px solid rgba(255,255,255,0.07)',
+                          minHeight: '64px',
+                        }}
+                      >
+                        <span className="text-2xl flex-shrink-0">{cat.emoji}</span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-white truncate">{cat.name}</p>
+                          <p className="text-[10px]" style={{ color: '#555566' }}>{count} вопросов</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ── QUESTIONS VIEW ── */}
+            {(libView === 'questions' || searchQuery.trim()) && (
+              <div className="flex-1 overflow-y-auto px-4 pb-8 space-y-3" style={{ WebkitOverflowScrolling: 'touch' }}>
                 {(() => {
                   let toShow: LibraryQuestion[] = [];
-
                   if (searchQuery.trim()) {
                     const q = searchQuery.toLowerCase();
                     toShow = libraryQuestions.filter(lq =>
@@ -904,7 +978,7 @@ export default function EditorPage({
 
                   if (toShow.length === 0) {
                     return (
-                      <div className="flex flex-col items-center justify-center h-full text-center py-16">
+                      <div className="flex flex-col items-center justify-center py-20 text-center">
                         <div className="text-5xl mb-4 opacity-30">
                           {selectedCategory === 'favorites' ? '⭐' : selectedCategory === 'recent' ? '⏳' : '🔍'}
                         </div>
@@ -915,9 +989,9 @@ export default function EditorPage({
                             ? 'Вы ещё не добавляли вопросы'
                             : 'Ничего не найдено'}
                         </p>
-                        <p className="text-xs mt-1" style={{ color: '#444455' }}>
+                        <p className="text-xs mt-2" style={{ color: '#444455' }}>
                           {selectedCategory === 'favorites'
-                            ? 'Нажмите ☆ на любом вопросе, чтобы сохранить'
+                            ? 'Нажмите ☆ рядом с любым вопросом'
                             : selectedCategory === 'recent'
                             ? 'Добавьте вопрос из любой категории'
                             : 'Попробуйте другой запрос'}
@@ -927,83 +1001,76 @@ export default function EditorPage({
                   }
 
                   return (
-                    <div className="grid gap-3">
+                    <>
                       {toShow.map(libQ => {
                         const isFav = favorites.includes(libQ.id);
                         const isAdded = !!addedQuestionsFeedback[libQ.id];
                         return (
                           <div
                             key={libQ.id}
-                            className="rounded-2xl p-4 flex gap-4 items-start transition-all"
+                            className="rounded-2xl p-4 transition-all"
                             style={{
-                              background: 'rgba(255,255,255,0.02)',
+                              background: isAdded ? 'rgba(16,185,129,0.06)' : 'rgba(255,255,255,0.03)',
                               border: isAdded
                                 ? '1px solid rgba(16,185,129,0.3)'
-                                : '1px solid rgba(255,255,255,0.06)',
+                                : '1px solid rgba(255,255,255,0.07)',
                             }}
                           >
-                            {/* Star */}
-                            <button
-                              onClick={(e) => { e.stopPropagation(); toggleFavorite(libQ.id); }}
-                              className="flex-shrink-0 text-base leading-none mt-0.5 transition-all hover:scale-125 active:scale-95 cursor-pointer"
-                              style={{ minHeight: 'auto', minWidth: 'auto', color: isFav ? '#fbbf24' : '#444455' }}
-                              title={isFav ? 'Убрать из избранного' : 'В избранное'}
-                            >
-                              {isFav ? '⭐' : '☆'}
-                            </button>
-
-                            {/* Content */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5 mb-2">
-                                <span className="text-sm">{libQ.emoji}</span>
-                                <p className="text-xs font-semibold text-white leading-snug">{libQ.text}</p>
-                              </div>
-                              <div className="flex flex-wrap gap-1">
-                                {libQ.answers.map((ans, i) => (
-                                  <span
-                                    key={i}
-                                    className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full font-medium"
-                                    style={{
-                                      background: `${ans.color}18`,
-                                      border: `1px solid ${ans.color}28`,
-                                      color: '#c4c4d4',
-                                    }}
-                                  >
-                                    <span>{ans.emoji}</span>
-                                    <span>{ans.text}</span>
-                                    {ans.is_runaway && (
-                                      <span className="text-[8px] ml-0.5 text-red-400">🏃</span>
-                                    )}
-                                  </span>
-                                ))}
-                              </div>
+                            {/* Question row */}
+                            <div className="flex items-start gap-3 mb-3">
+                              <span className="text-xl flex-shrink-0 mt-0.5">{libQ.emoji}</span>
+                              <p className="flex-1 text-sm font-semibold text-white leading-snug">{libQ.text}</p>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); toggleFavorite(libQ.id); }}
+                                className="flex-shrink-0 text-lg leading-none transition-all active:scale-90"
+                                style={{ minHeight: 'auto', minWidth: 'auto', color: isFav ? '#fbbf24' : '#333345' }}
+                              >
+                                {isFav ? '⭐' : '☆'}
+                              </button>
                             </div>
 
-                            {/* Add button */}
+                            {/* Answer chips */}
+                            <div className="flex flex-wrap gap-1.5 mb-3">
+                              {libQ.answers.map((ans, i) => (
+                                <span
+                                  key={i}
+                                  className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full font-medium"
+                                  style={{
+                                    background: `${ans.color}18`,
+                                    border: `1px solid ${ans.color}30`,
+                                    color: '#c4c4d4',
+                                  }}
+                                >
+                                  <span>{ans.emoji}</span>
+                                  <span>{ans.text}</span>
+                                  {ans.is_runaway && <span className="text-[9px] text-red-400">🏃</span>}
+                                </span>
+                              ))}
+                            </div>
+
+                            {/* Add button full-width */}
                             <button
                               onClick={() => addQuestionFromLibrary(libQ)}
-                              className="flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-bold transition-all cursor-pointer hover:scale-[1.03] active:scale-95"
+                              className="w-full py-3 rounded-xl text-sm font-bold transition-all active:scale-98 cursor-pointer"
                               style={{
                                 background: isAdded
                                   ? 'rgba(16,185,129,0.15)'
                                   : 'linear-gradient(135deg,#ec4899,#a78bfa)',
-                                border: isAdded ? '1px solid rgba(16,185,129,0.35)' : 'none',
+                                border: isAdded ? '1px solid rgba(16,185,129,0.4)' : 'none',
                                 color: isAdded ? '#34d399' : '#fff',
-                                boxShadow: isAdded ? 'none' : '0 4px 14px rgba(236,72,153,0.25)',
-                                minHeight: 'auto',
-                                whiteSpace: 'nowrap',
+                                boxShadow: isAdded ? 'none' : '0 4px 16px rgba(236,72,153,0.3)',
                               }}
                             >
-                              {isAdded ? <>✓ Добавлено</> : <>➕ Добавить</>}
+                              {isAdded ? '✓ Добавлено' : '➕ Добавить вопрос'}
                             </button>
                           </div>
                         );
                       })}
-                    </div>
+                    </>
                   );
                 })()}
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}
