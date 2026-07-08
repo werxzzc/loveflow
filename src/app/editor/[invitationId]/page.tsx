@@ -528,12 +528,25 @@ export default function EditorPage({
       </header>
 
       <div className="flex flex-1 flex-col md:flex-row md:overflow-hidden" style={{ minHeight: 0 }}>
+        {/* Step indicator on mobile - always visible top strip */}
+        <div className="md:hidden flex-shrink-0 px-4 py-2 flex items-center gap-2" style={{ background: 'rgba(0,0,0,0.4)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+          <div className="flex gap-1 flex-1">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <div key={s} className="h-1 flex-1 rounded-full transition-all duration-300"
+                style={{ background: s <= step ? 'linear-gradient(90deg, #ec4899, #a78bfa)' : 'rgba(255,255,255,0.08)' }} />
+            ))}
+          </div>
+          <span className="text-[10px] font-bold ml-2 flex-shrink-0" style={{ color: '#666677' }}>
+            {step === 1 ? 'Инфо' : step === 2 ? 'Тема' : step === 3 ? 'Вопросы' : step === 4 ? 'Просмотр' : 'Публикация'}
+          </span>
+        </div>
+
         {/* ─── LEFT PANEL: STEP-BY-STEP WIZARD ─────────────────────────────────── */}
         <div className={`w-full md:w-[450px] flex-shrink-0 flex flex-col border-r ${step === 4 ? 'hidden md:flex' : 'flex'}`}
           style={{ borderColor: 'rgba(255,255,255,0.06)', background: '#0c0c18' }}>
           
-          {/* Wizard Step Tracker Header */}
-          <div className="p-4 border-b space-y-2.5" style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.1)' }}>
+          {/* Wizard Step Tracker Header — desktop only */}
+          <div className="hidden md:block p-4 border-b space-y-2.5" style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.1)' }}>
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-white uppercase tracking-wider">Шаг {step} из 5</span>
               <span className="text-gray-500 font-medium">
@@ -555,7 +568,8 @@ export default function EditorPage({
             </div>
           </div>
 
-          <div className="flex-1 p-5 space-y-5 md:overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+          {/* Step content — pb-28 on mobile so fixed nav bar never covers content */}
+          <div className="flex-1 p-5 pb-28 md:pb-5 space-y-5 md:overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
             {/* ─ STEP 1: INFO ─ */}
             {step === 1 && (
               <div className="space-y-4 animate-fade-in-up">
@@ -730,8 +744,8 @@ export default function EditorPage({
             )}
           </div>
 
-          {/* Stepper Wizard Footer Controls */}
-          <div className="p-4 border-t flex items-center justify-between gap-3 bg-[#080810]/95 backdrop-blur-md sticky bottom-0 md:static"
+          {/* Stepper Wizard Footer Controls — desktop only */}
+          <div className="hidden md:flex p-4 border-t items-center justify-between gap-3 bg-[#080810]/95 backdrop-blur-md"
             style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
             <button
               onClick={() => setStep(prev => Math.max(1, prev - 1))}
@@ -760,21 +774,74 @@ export default function EditorPage({
           </div>
         </div>
 
-        {/* ─── RIGHT PANEL: PREVIEW ─── */}
-        <div className={`flex-1 items-center justify-center p-4 relative ${step === 4 ? 'flex' : 'hidden md:flex'}`}
+        {/* \u2500\u2500\u2500 RIGHT PANEL: PREVIEW \u2500\u2500\u2500 */}
+        <div className={`flex-1 items-center justify-center p-4 pb-28 md:pb-4 relative ${step === 4 ? 'flex' : 'hidden md:flex'}`}
           style={{ background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.01) 0%, transparent 70%)', minHeight: step === 4 ? '100dvh' : 'auto' }}>
-          
-          {/* Mobile Back Button */}
-          {step === 4 && (
-            <button
-              onClick={() => setStep(3)}
-              className="absolute top-4 left-4 z-50 md:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border bg-[#0c0c18]/90"
-              style={{ color: '#888899', borderColor: 'rgba(255,255,255,0.1)' }}>
-              ← В редактор
-            </button>
-          )}
 
           <InvitePreview data={invitation} />
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          MOBILE FIXED BOTTOM NAV BAR — always visible on mobile, all steps
+          ═════════════════════════════════════════════════════════════════ */}
+      <div
+        className="fixed bottom-0 left-0 right-0 z-40 md:hidden"
+        style={{
+          background: 'rgba(8, 8, 16, 0.97)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderTop: '1px solid rgba(255,255,255,0.08)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
+      >
+        <div className="flex items-center gap-3 px-4 py-3">
+          {/* Back button */}
+          <button
+            onClick={() => {
+              if (step > 1) setStep(prev => prev - 1);
+            }}
+            disabled={step === 1}
+            className="flex items-center gap-1.5 px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              color: '#c0c0d4',
+              border: '1px solid rgba(255,255,255,0.1)',
+              minHeight: '52px',
+              minWidth: '100px',
+            }}
+          >
+            <span style={{ fontSize: '16px' }}>←</span>
+            <span>Назад</span>
+          </button>
+
+          {/* Primary action button — grows to fill remaining space */}
+          <button
+            onClick={() => {
+              if (step === 5) {
+                router.push(clientToken ? `/client/${clientToken}` : '/admin/dashboard');
+              } else {
+                setStep(prev => Math.min(5, prev + 1));
+              }
+            }}
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-extrabold transition-all active:scale-[0.98] shadow-lg"
+            style={{
+              background: step === 5
+                ? 'linear-gradient(135deg, #10b981, #059669)'
+                : 'linear-gradient(135deg, #ec4899, #a78bfa)',
+              color: '#fff',
+              minHeight: '52px',
+              boxShadow: step === 5
+                ? '0 8px 24px rgba(16,185,129,0.35)'
+                : '0 8px 24px rgba(236,72,153,0.35)',
+            }}
+          >
+            {step === 1 && <><span>Инфо</span><span>→</span></>}
+            {step === 2 && <><span>Тема</span><span>→</span></>}
+            {step === 3 && <><span>Просмотреть</span><span>→</span></>}
+            {step === 4 && <><span>✨</span><span>Опубликовать</span></>}
+            {step === 5 && <><span>✅</span><span>Завершить</span></>}
+          </button>
         </div>
       </div>
 
