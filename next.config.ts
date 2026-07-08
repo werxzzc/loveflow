@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
+const nextConfig = {
   // Disable ESLint and TypeScript errors from blocking production builds.
   // These will be fixed incrementally post-MVP; the app behavior is unchanged.
   eslint: {
@@ -9,6 +9,6 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-};
+} as any;
 
-export default nextConfig;
+export default nextConfig as NextConfig;

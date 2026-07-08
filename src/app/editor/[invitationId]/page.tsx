@@ -271,7 +271,7 @@ export default function EditorPage({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<'info' | 'questions' | 'theme'>('info');
+  const [step, setStep] = useState<number>(1);
   const [showTemplates, setShowTemplates] = useState(false);
   const [invLink, setInvLink] = useState('');
   const [copied, setCopied] = useState(false);
@@ -480,42 +480,48 @@ export default function EditorPage({
         )}
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* ─── LEFT PANEL ─────────────────────────────────────────────── */}
-        <div className="w-full md:w-[400px] flex-shrink-0 flex flex-col border-r overflow-hidden"
+      <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
+        {/* ─── LEFT PANEL: STEP-BY-STEP WIZARD ─────────────────────────────────── */}
+        <div className={`w-full md:w-[450px] flex-shrink-0 flex flex-col border-r overflow-hidden ${step === 4 ? 'hidden md:flex' : 'flex'}`}
           style={{ borderColor: 'rgba(255,255,255,0.06)', background: '#0c0c18' }}>
-          {/* Tabs */}
-          <div className="flex border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-            {(['info', 'questions', 'theme'] as const).map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className="flex-1 py-3 text-xs font-medium capitalize transition-all"
-                style={{
-                  color: activeTab === tab ? '#f0f0f4' : '#888899',
-                  borderBottom: activeTab === tab ? `2px solid ${theme.colors.primary}` : '2px solid transparent',
-                  background: 'transparent',
-                  minHeight: 'auto',
-                }}>
-                {tab === 'info' ? '✏️ Инфо' : tab === 'questions' ? '❓ Вопросы' : '🎨 Тема'}
-              </button>
-            ))}
+          
+          {/* Wizard Step Tracker Header */}
+          <div className="p-4 border-b space-y-2.5" style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.1)' }}>
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-white uppercase tracking-wider">Шаг {step} из 5</span>
+              <span className="text-gray-500 font-medium">
+                {step === 1 ? 'Информация' : step === 2 ? 'Тема оформления' : step === 3 ? 'Вопросы' : step === 4 ? 'Проверка' : 'Публикация'}
+              </span>
+            </div>
+            
+            {/* Visual Step Dots */}
+            <div className="flex gap-1.5">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <div
+                  key={s}
+                  className="h-1.5 flex-1 rounded-full transition-all duration-300"
+                  style={{
+                    background: s <= step ? 'linear-gradient(90deg, #ec4899, #a78bfa)' : 'rgba(255,255,255,0.08)',
+                  }}
+                />
+              ))}
+            </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {/* ─ INFO TAB ─ */}
-            {activeTab === 'info' && (
-              <>
+          <div className="flex-1 overflow-y-auto p-5 space-y-5">
+            {/* ─ STEP 1: INFO ─ */}
+            {step === 1 && (
+              <div className="space-y-4 animate-fade-in-up">
                 {[
                   { label: "Имя девушки", key: 'girl_name', placeholder: 'София' },
-                  { label: 'Заголовок', key: 'title', placeholder: 'Пойдешь со мной на свидание?' },
+                  { label: 'Заголовок приглашения', key: 'title', placeholder: 'Пойдешь со мной на свидание?' },
                   { label: 'Подзаголовок', key: 'subtitle', placeholder: 'Небольшой вопрос для тебя...' },
                   { label: 'Приветственное сообщение', key: 'welcome_message', placeholder: 'Привет! Я сделал кое-что особенное для тебя ❤️' },
                   { label: 'Описание', key: 'description', placeholder: 'Ответь на пару вопросов для меня...' },
                   { label: 'Финальное сообщение', key: 'final_message', placeholder: 'Спасибо! Твои ответы очень важны для меня ❤️' },
                 ].map(({ label, key, placeholder }) => (
                   <div key={key}>
-                    <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: '#888899' }}>
+                    <label className="block text-[10px] font-bold mb-1.5 uppercase tracking-wider text-gray-500">
                       {label}
                     </label>
                     {key === 'welcome_message' || key === 'description' || key === 'final_message' ? (
@@ -523,9 +529,9 @@ export default function EditorPage({
                         value={(invitation as Record<string, string>)[key] ?? ''}
                         onChange={(e) => update({ [key]: e.target.value } as Partial<Invitation>)}
                         placeholder={placeholder}
-                        rows={2}
-                        className="w-full px-3 py-2.5 rounded-xl text-sm resize-none transition-all"
-                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#f0f0f4', outline: 'none' }}
+                        rows={3}
+                        className="w-full px-3.5 py-3 rounded-2xl text-xs resize-none transition-all"
+                        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#f0f0f4', outline: 'none' }}
                         onFocus={(e) => { e.target.style.border = `1px solid ${theme.colors.primary}66`; }}
                         onBlur={(e) => { e.target.style.border = '1px solid rgba(255,255,255,0.08)'; }}
                       />
@@ -535,49 +541,81 @@ export default function EditorPage({
                         value={(invitation as Record<string, string>)[key] ?? ''}
                         onChange={(e) => update({ [key]: e.target.value } as Partial<Invitation>)}
                         placeholder={placeholder}
-                        className="w-full px-3 py-2.5 rounded-xl text-sm transition-all"
-                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#f0f0f4', outline: 'none' }}
+                        className="w-full px-3.5 py-3 rounded-2xl text-xs transition-all"
+                        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#f0f0f4', outline: 'none' }}
                         onFocus={(e) => { e.target.style.border = `1px solid ${theme.colors.primary}66`; }}
                         onBlur={(e) => { e.target.style.border = '1px solid rgba(255,255,255,0.08)'; }}
                       />
                     )}
                   </div>
                 ))}
-              </>
+              </div>
             )}
 
-            {/* ─ QUESTIONS TAB ─ */}
-            {activeTab === 'questions' && (
-              <>
-                <div className="grid grid-cols-3 gap-2 mb-4">
+            {/* ─ STEP 2: THEME ─ */}
+            {step === 2 && (
+              <div className="grid grid-cols-2 gap-3.5 animate-fade-in-up py-2">
+                {themeList.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => update({ theme: t.id as ThemeId })}
+                    className="p-3.5 rounded-3xl text-left transition-all hover:scale-[1.02] cursor-pointer"
+                    style={{
+                      background: t.colors.bg,
+                      border: invitation.theme === t.id
+                        ? `2px solid ${t.colors.primary}`
+                        : '2px solid rgba(255,255,255,0.06)',
+                      boxShadow: invitation.theme === t.id ? `0 4px 20px ${t.colors.primary}30` : 'none',
+                      minHeight: 'auto', minWidth: 'auto',
+                    }}>
+                    <div className="text-2xl mb-1.5">{t.emoji}</div>
+                    <p className="text-xs font-bold" style={{ color: t.colors.text }}>{t.name}</p>
+                    <p className="text-[10px] mt-0.5" style={{ color: t.colors.textSecondary }}>{t.description}</p>
+                    {/* Color preview dots */}
+                    <div className="flex gap-1.5 mt-3">
+                      {[t.colors.primary, t.colors.accent, t.colors.bgSecondary].map((c, i) => (
+                        <div key={i} className="w-3.5 h-3.5 rounded-full border border-white/10" style={{ background: c }} />
+                      ))}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* ─ STEP 3: QUESTIONS ─ */}
+            {step === 3 && (
+              <div className="space-y-4 animate-fade-in-up">
+                <div className="grid grid-cols-3 gap-2 mb-2">
                   <button onClick={addQuestion}
-                    className="py-2.5 px-1 rounded-xl text-[10px] font-semibold transition-all text-center flex flex-col items-center justify-center gap-1.5 cursor-pointer hover:opacity-80"
-                    style={{ background: `${theme.colors.primary}22`, color: theme.colors.primary, border: `1px solid ${theme.colors.primary}44`, minHeight: '56px' }}>
+                    className="py-2.5 px-1 rounded-2xl text-[10px] font-bold transition-all text-center flex flex-col items-center justify-center gap-1.5 cursor-pointer hover:bg-white/5 active-tap"
+                    style={{ background: `${theme.colors.primary}18`, color: theme.colors.primary, border: `1px solid ${theme.colors.primary}33`, minHeight: '56px' }}>
                     <span className="text-sm">➕</span>
                     <span>Вопрос</span>
                   </button>
                   <button onClick={() => setShowTemplates(true)}
-                    className="py-2.5 px-1 rounded-xl text-[10px] font-medium transition-all text-center flex flex-col items-center justify-center gap-1.5 cursor-pointer hover:bg-white/5"
-                    style={{ background: 'rgba(255,255,255,0.04)', color: '#f0f0f4', border: '1px solid rgba(255,255,255,0.08)', minHeight: '56px' }}>
+                    className="py-2.5 px-1 rounded-2xl text-[10px] font-medium transition-all text-center flex flex-col items-center justify-center gap-1.5 cursor-pointer hover:bg-white/5 active-tap"
+                    style={{ background: 'rgba(255,255,255,0.02)', color: '#f0f0f4', border: '1px solid rgba(255,255,255,0.08)', minHeight: '56px' }}>
                     <span className="text-sm">📋</span>
                     <span>Шаблоны</span>
                   </button>
                   <button onClick={() => setShowLibrary(true)}
-                    className="py-2.5 px-1 rounded-xl text-[10px] font-medium transition-all text-center flex flex-col items-center justify-center gap-1.5 cursor-pointer hover:bg-white/5"
-                    style={{ background: 'rgba(255,255,255,0.04)', color: '#a78bfa', border: '1px solid rgba(167,139,250,0.2)', minHeight: '56px' }}>
+                    className="py-2.5 px-1 rounded-2xl text-[10px] font-medium transition-all text-center flex flex-col items-center justify-center gap-1.5 cursor-pointer hover:bg-white/5 active-tap"
+                    style={{ background: 'rgba(255,255,255,0.02)', color: '#a78bfa', border: '1px solid rgba(167,139,250,0.15)', minHeight: '56px' }}>
                     <span className="text-sm">📚</span>
                     <span>Библиотека</span>
                   </button>
                 </div>
 
                 {(invitation.questions ?? []).length === 0 ? (
-                  <div className="text-center py-10 rounded-xl"
-                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
-                    <div className="text-3xl mb-2">❓</div>
-                    <p className="text-xs" style={{ color: '#888899' }}>Вопросов пока нет. Создайте новый или выберите готовый шаблон.</p>
+                  <div className="text-center py-12 rounded-3xl"
+                    style={{ background: 'rgba(255,255,255,0.01)', border: '1px dashed rgba(255,255,255,0.06)' }}>
+                    <div className="text-4xl mb-3">❓</div>
+                    <p className="text-xs text-gray-500 max-w-[200px] mx-auto leading-relaxed">
+                      Вопросов пока нет. Добавьте свой или выберите из библиотеки.
+                    </p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-3.5">
                     {(invitation.questions ?? []).map((q, idx) => (
                       <QuestionCard
                         key={q.id}
@@ -592,47 +630,107 @@ export default function EditorPage({
                     ))}
                   </div>
                 )}
-              </>
+              </div>
             )}
 
-            {/* ─ THEME TAB ─ */}
-            {activeTab === 'theme' && (
-              <div className="grid grid-cols-2 gap-3">
-                {themeList.map(t => (
-                  <button
-                    key={t.id}
-                    onClick={() => update({ theme: t.id as ThemeId })}
-                    className="p-3 rounded-2xl text-left transition-all hover:-translate-y-0.5"
-                    style={{
-                      background: t.colors.bg,
-                      border: invitation.theme === t.id
-                        ? `2px solid ${t.colors.primary}`
-                        : '2px solid rgba(255,255,255,0.06)',
-                      boxShadow: invitation.theme === t.id ? `0 4px 20px ${t.colors.primary}40` : 'none',
-                      minHeight: 'auto', minWidth: 'auto',
-                    }}>
-                    <div className="text-2xl mb-1">{t.emoji}</div>
-                    <p className="text-xs font-semibold" style={{ color: t.colors.text }}>{t.name}</p>
-                    <p className="text-xs mt-0.5" style={{ color: t.colors.textSecondary, fontSize: '10px' }}>{t.description}</p>
-                    {/* Color preview */}
-                    <div className="flex gap-1 mt-2">
-                      {[t.colors.primary, t.colors.accent, t.colors.bgSecondary].map((c, i) => (
-                        <div key={i} className="w-4 h-4 rounded-full" style={{ background: c }} />
-                      ))}
+            {/* ─ STEP 5: PUBLISH ─ */}
+            {step === 5 && (
+              <div className="space-y-5 animate-fade-in-up py-4">
+                <div className="text-center space-y-2">
+                  <div className="text-5xl animate-float">🎉</div>
+                  <h3 className="text-lg font-bold text-white">Приглашение готово!</h3>
+                  <p className="text-xs text-gray-400 max-w-[280px] mx-auto leading-relaxed">
+                    Опрос сохранен и готов к отправке вашей любимой.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-3xl bg-white/2 border border-white/5 space-y-3.5">
+                  <div>
+                    <label className="block text-[9px] uppercase tracking-wider font-bold mb-1.5 text-gray-500">
+                      Ссылка на опрос
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={invLink}
+                        className="flex-1 px-3 py-2.5 rounded-xl text-xs bg-black/40 border border-white/8 text-gray-300 outline-none"
+                      />
+                      <button
+                        onClick={copyLink}
+                        className="px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer active-tap"
+                        style={{
+                          background: copied ? 'rgba(16,185,129,0.15)' : 'rgba(167,139,250,0.15)',
+                          color: copied ? '#34d399' : '#a78bfa',
+                          border: `1px solid ${copied ? 'rgba(16,185,129,0.3)' : 'rgba(167,139,250,0.3)'}`,
+                        }}
+                      >
+                        {copied ? 'Скопировано!' : 'Копировать'}
+                      </button>
                     </div>
-                  </button>
-                ))}
+                  </div>
+                </div>
+
+                <div className="rounded-3xl p-4 bg-yellow-500/5 border border-yellow-500/10 space-y-2">
+                  <h4 className="text-xs font-bold text-yellow-500">💡 Как это работает?</h4>
+                  <ul className="text-[11px] text-gray-400 space-y-2 list-disc pl-4 leading-relaxed">
+                    <li>Скопируйте ссылку и отправьте её любимой.</li>
+                    <li>Она ответит на интерактивные вопросы на своём телефоне.</li>
+                    <li>Все ответы мгновенно отобразятся в вашем личном кабинете.</li>
+                  </ul>
+                </div>
               </div>
             )}
           </div>
+
+          {/* Stepper Wizard Footer Controls */}
+          <div className="p-4 border-t flex items-center justify-between gap-3 bg-[#080810]/95 backdrop-blur-md"
+            style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+            <button
+              onClick={() => setStep(prev => Math.max(1, prev - 1))}
+              disabled={step === 1}
+              className="px-5 py-3 rounded-2xl text-xs font-bold border transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/5 active-tap"
+              style={{ background: 'transparent', color: '#f0f0f4', borderColor: 'rgba(255,255,255,0.1)' }}
+            >
+              Назад
+            </button>
+            <button
+              onClick={() => {
+                if (step === 5) {
+                  router.push(clientToken ? `/client/${clientToken}` : '/admin/dashboard');
+                } else {
+                  setStep(prev => Math.min(5, prev + 1));
+                }
+              }}
+              className="px-6 py-3 rounded-2xl text-xs font-extrabold transition-all cursor-pointer shadow-lg active-tap hover:opacity-90"
+              style={{
+                background: 'linear-gradient(135deg, #ec4899, #a78bfa)',
+                color: '#fff',
+              }}
+            >
+              {step === 4 ? 'Опубликовать ✨' : step === 5 ? 'Завершить ✓' : 'Далее'}
+            </button>
+          </div>
         </div>
 
-        {/* ─── RIGHT: PREVIEW ──────────────────────────────────────────── */}
-        <div className="hidden md:flex flex-1 items-center justify-center"
-          style={{ background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.02) 0%, transparent 70%)' }}>
+        {/* ─── RIGHT PANEL: PREVIEW (Visible side-by-side on desktop, takes full screen on mobile Step 4) ─── */}
+        <div className={`flex-1 items-center justify-center p-4 relative ${step === 4 ? 'flex' : 'hidden md:flex'}`}
+          style={{ background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.01) 0%, transparent 70%)' }}>
+          
+          {/* Mobile Back Button to step out of preview screen on smartphones */}
+          {step === 4 && (
+            <button
+              onClick={() => setStep(3)}
+              className="absolute top-4 left-4 z-50 md:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border bg-[#0c0c18]/90"
+              style={{ color: '#888899', borderColor: 'rgba(255,255,255,0.1)' }}>
+              ← В редактор
+            </button>
+          )}
+
           <InvitePreview data={invitation} />
         </div>
       </div>
+
 
       {/* ─── TEMPLATE MODAL ───────────────────────────────────────────── */}
       {showTemplates && (
